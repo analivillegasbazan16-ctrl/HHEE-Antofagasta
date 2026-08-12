@@ -1,0 +1,2917 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <meta name="theme-color" content="#003b71">
+
+  <title>Gestión de Horas Extras</title>
+
+  <style>
+    :root {
+      --azul: #003b71;
+      --azul-2: #005b96;
+      --azul-claro: #eaf4fb;
+      --celeste: #0088cc;
+
+      --fondo: #f3f7fa;
+      --blanco: #ffffff;
+
+      --texto: #172033;
+      --gris: #68778b;
+      --borde: #dce5ec;
+
+      --verde: #18865b;
+      --verde-fondo: #eaf8f1;
+
+      --morado: #7545a5;
+      --morado-fondo: #f4edfb;
+
+      --naranjo: #b56b18;
+      --naranjo-fondo: #fff4e5;
+
+      --rojo: #b52f38;
+      --rojo-fondo: #fff0f1;
+
+      --sombra: 0 14px 38px rgba(0, 59, 113, 0.10);
+
+      --radio: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      min-height: 100%;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+
+      font-family:
+        "Segoe UI",
+        Arial,
+        sans-serif;
+
+      color: var(--texto);
+      background: var(--fondo);
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* =========================================================
+       CARGA
+    ========================================================= */
+
+    #pantallaCarga {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      background: var(--fondo);
+    }
+
+    .carga-contenido {
+      text-align: center;
+      color: var(--azul);
+    }
+
+    .spinner {
+      width: 44px;
+      height: 44px;
+
+      margin: 0 auto 14px;
+
+      border: 4px solid #d9e6ee;
+      border-top-color: var(--azul);
+
+      border-radius: 50%;
+
+      animation: girar 0.8s linear infinite;
+    }
+
+    @keyframes girar {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* =========================================================
+       LOGIN
+    ========================================================= */
+
+    #pantallaLogin {
+      min-height: 100vh;
+
+      display: grid;
+      grid-template-columns: 1fr 0.82fr;
+
+      background:
+        linear-gradient(
+          135deg,
+          #003b71,
+          #0079b8
+        );
+    }
+
+    .login-marca {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      padding: 55px;
+
+      color: white;
+    }
+
+    .marca-contenido {
+      max-width: 580px;
+    }
+
+    .marca-logo {
+      display: inline-flex;
+      align-items: center;
+
+      margin-bottom: 30px;
+
+      padding: 12px 18px;
+
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 14px;
+
+      background: rgba(255, 255, 255, 0.10);
+
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -1px;
+    }
+
+    .marca-logo span {
+      color: #ffd166;
+    }
+
+    .login-marca h1 {
+      margin: 0 0 18px;
+
+      font-size: clamp(38px, 5vw, 62px);
+      line-height: 1.05;
+
+      letter-spacing: -1.5px;
+    }
+
+    .login-marca p {
+      max-width: 510px;
+
+      margin: 0;
+
+      color: rgba(255, 255, 255, 0.84);
+
+      font-size: 18px;
+      line-height: 1.6;
+    }
+
+    .login-derecha {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      padding: 35px;
+
+      border-radius: 38px 0 0 38px;
+
+      background: var(--fondo);
+    }
+
+    .login-card {
+      width: min(430px, 100%);
+
+      padding: 34px;
+
+      border: 1px solid var(--borde);
+      border-radius: 24px;
+
+      background: white;
+
+      box-shadow: var(--sombra);
+    }
+
+    .login-card h2 {
+      margin: 0 0 8px;
+
+      color: var(--azul);
+
+      font-size: 28px;
+    }
+
+    .login-subtitulo {
+      margin: 0 0 27px;
+
+      color: var(--gris);
+
+      line-height: 1.5;
+    }
+
+    .campo {
+      margin-bottom: 18px;
+    }
+
+    .campo label {
+      display: block;
+
+      margin-bottom: 8px;
+
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .campo input {
+      width: 100%;
+
+      padding: 14px 15px;
+
+      border: 1px solid var(--borde);
+      border-radius: 11px;
+
+      outline: none;
+
+      color: var(--texto);
+      background: white;
+    }
+
+    .campo input:focus {
+      border-color: var(--azul-2);
+
+      box-shadow:
+        0 0 0 3px rgba(0, 91, 150, 0.10);
+    }
+
+    .password-wrap {
+      position: relative;
+    }
+
+    .password-wrap input {
+      padding-right: 52px;
+    }
+
+    .ver-password {
+      position: absolute;
+
+      right: 7px;
+      top: 50%;
+
+      transform: translateY(-50%);
+
+      width: 40px;
+      height: 38px;
+
+      border: 0;
+      border-radius: 8px;
+
+      background: transparent;
+    }
+
+    .ver-password:hover {
+      background: #edf3f7;
+    }
+
+    .boton-principal {
+      width: 100%;
+
+      padding: 14px 18px;
+
+      border: 0;
+      border-radius: 11px;
+
+      background: var(--azul);
+      color: white;
+
+      font-weight: 750;
+
+      transition:
+        background 0.2s,
+        transform 0.1s;
+    }
+
+    .boton-principal:hover {
+      background: var(--azul-2);
+    }
+
+    .boton-principal:active {
+      transform: scale(0.99);
+    }
+
+    .boton-principal:disabled {
+      cursor: wait;
+      opacity: 0.65;
+    }
+
+    .boton-link {
+      width: 100%;
+
+      margin-top: 12px;
+      padding: 8px;
+
+      border: 0;
+
+      background: transparent;
+      color: var(--azul);
+
+      font-weight: 700;
+    }
+
+    .boton-link:hover {
+      text-decoration: underline;
+    }
+
+    .mensaje-login {
+      margin-bottom: 18px;
+
+      padding: 12px 14px;
+
+      border-radius: 10px;
+
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .mensaje-login.error {
+      color: var(--rojo);
+      background: var(--rojo-fondo);
+    }
+
+    .mensaje-login.exito {
+      color: var(--verde);
+      background: var(--verde-fondo);
+    }
+
+    .login-pie {
+      margin-top: 26px;
+
+      color: var(--gris);
+
+      font-size: 12px;
+      line-height: 1.5;
+
+      text-align: center;
+    }
+
+    /* =========================================================
+       CABECERA APP
+    ========================================================= */
+
+    #pantallaApp {
+      min-height: 100vh;
+    }
+
+    .cabecera {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+
+      min-height: 72px;
+
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+
+      gap: 20px;
+
+      padding: 12px 26px;
+
+      background: var(--azul);
+      color: white;
+
+      box-shadow:
+        0 4px 14px rgba(0, 0, 0, 0.10);
+    }
+
+    .cabecera-marca {
+      display: flex;
+      align-items: center;
+
+      gap: 13px;
+    }
+
+    .cabecera-icono {
+      width: 43px;
+      height: 43px;
+
+      display: grid;
+      place-items: center;
+
+      border-radius: 12px;
+
+      background: rgba(255, 255, 255, 0.13);
+
+      font-size: 22px;
+    }
+
+    .cabecera-marca h1 {
+      margin: 0;
+
+      font-size: 19px;
+    }
+
+    .cabecera-marca span {
+      display: block;
+
+      margin-top: 2px;
+
+      color: rgba(255, 255, 255, 0.7);
+
+      font-size: 12px;
+    }
+
+    .cabecera-usuario {
+      display: flex;
+      align-items: center;
+
+      gap: 11px;
+    }
+
+    .datos-usuario-header {
+      text-align: right;
+    }
+
+    .datos-usuario-header strong {
+      display: block;
+
+      font-size: 14px;
+    }
+
+    .datos-usuario-header span {
+      color: rgba(255, 255, 255, 0.72);
+
+      font-size: 12px;
+    }
+
+    .avatar {
+      width: 42px;
+      height: 42px;
+
+      display: grid;
+      place-items: center;
+
+      border-radius: 50%;
+
+      background: white;
+      color: var(--azul);
+
+      font-weight: 800;
+    }
+
+    .boton-salir {
+      padding: 9px 12px;
+
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 9px;
+
+      background: rgba(255, 255, 255, 0.10);
+      color: white;
+    }
+
+    .boton-salir:hover {
+      background: rgba(255, 255, 255, 0.18);
+    }
+
+    /* =========================================================
+       CONTENIDO
+    ========================================================= */
+
+    .contenedor {
+      width: min(1180px, calc(100% - 38px));
+
+      margin: 28px auto 60px;
+    }
+
+    /* =========================================================
+       BIENVENIDA
+    ========================================================= */
+
+    .tarjeta-bienvenida {
+      padding: 26px;
+
+      border: 1px solid var(--borde);
+      border-radius: var(--radio);
+
+      background:
+        linear-gradient(
+          135deg,
+          white,
+          #edf6fb
+        );
+
+      box-shadow:
+        0 8px 28px rgba(0, 59, 113, 0.06);
+    }
+
+    .tarjeta-bienvenida h2 {
+      margin: 0 0 6px;
+
+      color: var(--azul);
+
+      font-size: 27px;
+    }
+
+    .tarjeta-bienvenida > p {
+      margin: 0;
+
+      color: var(--gris);
+    }
+
+    .badges {
+      display: flex;
+      flex-wrap: wrap;
+
+      gap: 8px;
+
+      margin-top: 16px;
+    }
+
+    .badge {
+      display: inline-flex;
+
+      padding: 6px 10px;
+
+      border-radius: 999px;
+
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .badge-trabajador {
+      color: var(--verde);
+      background: var(--verde-fondo);
+    }
+
+    .badge-supervisor {
+      color: var(--azul-2);
+      background: var(--azul-claro);
+    }
+
+    .badge-admin {
+      color: var(--morado);
+      background: var(--morado-fondo);
+    }
+
+    .datos-perfil {
+      display: grid;
+
+      grid-template-columns:
+        repeat(3, minmax(120px, 1fr));
+
+      gap: 11px;
+
+      margin-top: 20px;
+    }
+
+    .dato-perfil {
+      padding: 13px 14px;
+
+      border: 1px solid var(--borde);
+      border-radius: 11px;
+
+      background: rgba(255, 255, 255, 0.78);
+    }
+
+    .dato-perfil span {
+      display: block;
+
+      margin-bottom: 4px;
+
+      color: var(--gris);
+
+      font-size: 11px;
+      font-weight: 700;
+
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .dato-perfil strong {
+      font-size: 14px;
+    }
+
+    /* =========================================================
+       SECCIONES
+    ========================================================= */
+
+    .seccion {
+      margin-top: 31px;
+    }
+
+    .seccion h2 {
+      margin: 0;
+
+      font-size: 21px;
+    }
+
+    .seccion-subtitulo {
+      margin: 5px 0 16px;
+
+      color: var(--gris);
+
+      font-size: 13px;
+    }
+
+    .grid-modulos {
+      display: grid;
+
+      grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+      gap: 16px;
+    }
+
+    .modulo {
+      min-height: 132px;
+
+      display: flex;
+      align-items: flex-start;
+
+      gap: 16px;
+
+      padding: 20px;
+
+      border: 1px solid var(--borde);
+      border-radius: 16px;
+
+      background: white;
+      color: var(--texto);
+
+      text-align: left;
+
+      box-shadow:
+        0 5px 18px rgba(0, 59, 113, 0.04);
+
+      transition:
+        transform 0.15s,
+        border-color 0.15s,
+        box-shadow 0.15s;
+    }
+
+    .modulo:hover {
+      transform: translateY(-2px);
+
+      border-color: #abcbdc;
+
+      box-shadow:
+        0 10px 25px rgba(0, 59, 113, 0.09);
+    }
+
+    .modulo-icono {
+      width: 51px;
+      height: 51px;
+
+      display: grid;
+      place-items: center;
+
+      flex-shrink: 0;
+
+      border-radius: 14px;
+
+      background: var(--azul-claro);
+
+      font-size: 25px;
+    }
+
+    .modulo h3 {
+      margin: 2px 0 6px;
+
+      color: var(--azul);
+
+      font-size: 16px;
+    }
+
+    .modulo p {
+      margin: 0;
+
+      color: var(--gris);
+
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .flecha {
+      margin-top: 11px;
+      margin-left: auto;
+
+      color: #92a5b2;
+
+      font-size: 24px;
+    }
+
+    /* =========================================================
+       PANEL TEMPORAL
+    ========================================================= */
+
+    #panelModulo {
+      margin-top: 30px;
+
+      padding: 24px;
+
+      border: 1px solid var(--borde);
+      border-radius: var(--radio);
+
+      background: white;
+
+      box-shadow:
+        0 8px 26px rgba(0, 59, 113, 0.05);
+    }
+
+    .panel-encabezado {
+      display: flex;
+
+      align-items: flex-start;
+      justify-content: space-between;
+
+      gap: 20px;
+    }
+
+    #tituloModulo {
+      margin: 0 0 7px;
+
+      color: var(--azul);
+    }
+
+    #descripcionModulo {
+      margin: 0;
+
+      color: var(--gris);
+
+      line-height: 1.55;
+    }
+
+    .cerrar-panel {
+      padding: 8px 11px;
+
+      border: 1px solid var(--borde);
+      border-radius: 8px;
+
+      background: white;
+      color: var(--gris);
+    }
+
+    .aviso-construccion {
+      margin-top: 20px;
+
+      padding: 15px;
+
+      border: 1px solid #efd396;
+      border-radius: 11px;
+
+      background: var(--naranjo-fondo);
+      color: #835818;
+
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* =========================================================
+       TOAST
+    ========================================================= */
+
+    #toastContainer {
+      position: fixed;
+
+      right: 18px;
+      bottom: 18px;
+
+      z-index: 9999;
+
+      width: min(380px, calc(100% - 36px));
+    }
+
+    .toast {
+      margin-top: 9px;
+
+      padding: 14px 16px;
+
+      border-radius: 11px;
+
+      color: white;
+
+      box-shadow:
+        0 12px 30px rgba(0, 0, 0, 0.16);
+    }
+
+    .toast.info {
+      background: var(--azul);
+    }
+
+    .toast.exito {
+      background: var(--verde);
+    }
+
+    .toast.error {
+      background: var(--rojo);
+    }
+
+    /* =========================================================
+       RESPONSIVE
+    ========================================================= */
+
+    @media (max-width: 820px) {
+
+      #pantallaLogin {
+        display: block;
+
+        background: var(--fondo);
+      }
+
+      .login-marca {
+        min-height: 230px;
+
+        padding: 35px 26px;
+
+        align-items: flex-end;
+      }
+
+      .login-marca h1 {
+        font-size: 36px;
+      }
+
+      .login-marca p {
+        font-size: 15px;
+      }
+
+      .marca-logo {
+        margin-bottom: 18px;
+
+        font-size: 23px;
+      }
+
+      .login-derecha {
+        margin-top: -20px;
+
+        padding: 0 16px 35px;
+
+        border-radius: 25px 25px 0 0;
+      }
+
+      .login-card {
+        padding: 26px 22px;
+      }
+
+      .cabecera {
+        padding: 11px 15px;
+      }
+
+      .cabecera-marca span,
+      .datos-usuario-header {
+        display: none;
+      }
+
+      .cabecera-marca h1 {
+        font-size: 16px;
+      }
+
+      .contenedor {
+        width: calc(100% - 24px);
+
+        margin-top: 18px;
+      }
+
+      .datos-perfil {
+        grid-template-columns: 1fr;
+      }
+
+      .grid-modulos {
+        grid-template-columns: 1fr;
+      }
+
+      .modulo {
+        min-height: 115px;
+      }
+
+    }
+
+    @media (max-width: 430px) {
+
+      .avatar {
+        display: none;
+      }
+
+      .cabecera-icono {
+        width: 36px;
+        height: 36px;
+      }
+
+      .boton-salir {
+        font-size: 12px;
+      }
+
+      .tarjeta-bienvenida {
+        padding: 20px;
+      }
+
+      .tarjeta-bienvenida h2 {
+        font-size: 23px;
+      }
+
+      .modulo {
+        padding: 17px;
+      }
+
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- =======================================================
+       PANTALLA CARGANDO
+  ======================================================== -->
+
+  <div id="pantallaCarga">
+
+    <div class="carga-contenido">
+
+      <div class="spinner"></div>
+
+      <strong>
+        Cargando sistema...
+      </strong>
+
+    </div>
+
+  </div>
+
+
+  <!-- =======================================================
+       LOGIN
+  ======================================================== -->
+
+  <main
+    id="pantallaLogin"
+    class="hidden"
+  >
+
+    <section class="login-marca">
+
+      <div class="marca-contenido">
+
+        <div class="marca-logo">
+          transelec<span>.</span>
+        </div>
+
+        <h1>
+          Gestión de<br>
+          Horas Extras
+        </h1>
+
+        <p>
+          Registro, revisión, aprobación y conciliación
+          de horas extras desde computador o celular.
+        </p>
+
+      </div>
+
+    </section>
+
+
+    <section class="login-derecha">
+
+      <div class="login-card">
+
+        <h2>
+          Iniciar sesión
+        </h2>
+
+        <p class="login-subtitulo">
+          Ingresa con la cuenta habilitada
+          para el sistema de horas extras.
+        </p>
+
+
+        <div
+          id="mensajeLogin"
+          class="mensaje-login hidden"
+        ></div>
+
+
+        <form id="formLogin">
+
+          <div class="campo">
+
+            <label for="correo">
+              Correo electrónico
+            </label>
+
+            <input
+              id="correo"
+              type="email"
+              autocomplete="username"
+              placeholder="nombre.apellido@transelec.cl"
+              required
+            >
+
+          </div>
+
+
+          <div class="campo">
+
+            <label for="password">
+              Contraseña
+            </label>
+
+            <div class="password-wrap">
+
+              <input
+                id="password"
+                type="password"
+                autocomplete="current-password"
+                placeholder="Tu contraseña"
+                required
+              >
+
+              <button
+                id="botonVerPassword"
+                class="ver-password"
+                type="button"
+                aria-label="Mostrar contraseña"
+              >
+                👁
+              </button>
+
+            </div>
+
+          </div>
+
+
+          <button
+            id="botonIngresar"
+            class="boton-principal"
+            type="submit"
+          >
+            Ingresar
+          </button>
+
+
+          <button
+            id="botonRecuperar"
+            class="boton-link"
+            type="button"
+          >
+            Olvidé mi contraseña
+          </button>
+
+        </form>
+
+
+        <div class="login-pie">
+          Sistema de uso restringido.<br>
+          Solo usuarios previamente autorizados
+          pueden acceder.
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <!-- =======================================================
+       APLICACIÓN
+  ======================================================== -->
+
+  <div
+    id="pantallaApp"
+    class="hidden"
+  >
+
+    <header class="cabecera">
+
+      <div class="cabecera-marca">
+
+        <div class="cabecera-icono">
+          ⏱
+        </div>
+
+        <div>
+
+          <h1>
+            Gestión de Horas Extras
+          </h1>
+
+          <span>
+            Portal HHEE
+          </span>
+
+        </div>
+
+      </div>
+
+
+      <div class="cabecera-usuario">
+
+        <div class="datos-usuario-header">
+
+          <strong id="nombreHeader">
+            Usuario
+          </strong>
+
+          <span id="areaHeader">
+            Área
+          </span>
+
+        </div>
+
+
+        <div
+          id="avatarUsuario"
+          class="avatar"
+        >
+          U
+        </div>
+
+
+        <button
+          id="botonSalir"
+          class="boton-salir"
+          type="button"
+        >
+          Cerrar sesión
+        </button>
+
+      </div>
+
+    </header>
+
+
+    <main class="contenedor">
+
+      <!-- ===================================================
+           PERFIL
+      ==================================================== -->
+
+      <section class="tarjeta-bienvenida">
+
+        <h2>
+          Hola,
+          <span id="nombreBienvenida">
+            Usuario
+          </span>
+        </h2>
+
+        <p>
+          Bienvenido al sistema de gestión de horas extras.
+        </p>
+
+
+        <div
+          id="badgesUsuario"
+          class="badges"
+        ></div>
+
+
+        <div class="datos-perfil">
+
+          <div class="dato-perfil">
+
+            <span>
+              RUT
+            </span>
+
+            <strong id="perfilRut">
+              -
+            </strong>
+
+          </div>
+
+
+          <div class="dato-perfil">
+
+            <span>
+              Área
+            </span>
+
+            <strong id="perfilArea">
+              -
+            </strong>
+
+          </div>
+
+
+          <div class="dato-perfil">
+
+            <span>
+              Correo
+            </span>
+
+            <strong id="perfilCorreo">
+              -
+            </strong>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <!-- ===================================================
+           TRABAJADOR
+      ==================================================== -->
+
+      <section
+        id="seccionTrabajador"
+        class="seccion hidden"
+      >
+
+        <h2>
+          Mis horas extras
+        </h2>
+
+        <p class="seccion-subtitulo">
+          Ingresa y consulta tus solicitudes de horas extras.
+        </p>
+
+
+        <div class="grid-modulos">
+
+          <button
+            class="modulo"
+            type="button"
+            data-modulo="ingresoNormal"
+          >
+
+            <div class="modulo-icono">
+              ➕
+            </div>
+
+            <div>
+
+              <h3>
+                Ingresar horas extras
+              </h3>
+
+              <p>
+                Formulario para jornadas normales
+                de lunes a sábado.
+              </p>
+
+            </div>
+
+            <div class="flecha">
+              ›
+            </div>
+
+          </button>
+
+
+          <button
+            class="modulo"
+            type="button"
+            data-modulo="domingoFeriado"
+          >
+
+            <div class="modulo-icono">
+              📅
+            </div>
+
+            <div>
+
+              <h3>
+                Domingos y feriados
+              </h3>
+
+              <p>
+                Registro especial de trabajo
+                realizado en domingo o feriado.
+              </p>
+
+            </div>
+
+            <div class="flecha">
+              ›
+            </div>
+
+          </button>
+
+
+          <button
+            class="modulo"
+            type="button"
+            data-modulo="misSolicitudes"
+          >
+
+            <div class="modulo-icono">
+              📋
+            </div>
+
+            <div>
+
+              <h3>
+                Mis solicitudes
+              </h3>
+
+              <p>
+                Revisa solicitudes pendientes,
+                aprobadas y rechazadas.
+              </p>
+
+            </div>
+
+            <div class="flecha">
+              ›
+            </div>
+
+          </button>
+
+
+          <button
+            class="modulo"
+            type="button"
+            data-modulo="misHoras"
+          >
+
+            <div class="modulo-icono">
+              ⏲
+            </div>
+
+            <div>
+
+              <h3>
+                Mis horas
+              </h3>
+
+              <p>
+                Consulta tus horas aprobadas
+                al 50%, 75% y 100%.
+              </p>
+
+            </div>
+
+            <div class="flecha">
+              ›
+            </div>
+
+          </button>
+
+        </div>
+
+      </section>
+
+
+      <!-- ===================================================
+           SUPERVISOR
+      ==================================================== -->
+
+      <section
+        id="seccionSupervisor"
+        class="seccion hidden"
+      >
+
+        <h2>
+          Supervisión
+        </h2>
+
+        <p class="seccion-subtitulo">
+          Revisa únicamente las solicitudes
+          de los trabajadores asignados a tu cargo.
+        </p>
+
+
+        <div class="grid-modulos">
+
+          <button
+            class="modulo"
+            type="button"
+            data-modulo="pendientesSupervisor"
+          >
+
+            <div class="modulo-icono">
+              🔔
+            </div>
+
+            <div>
+
+              <h3>
+                Solicitudes pendientes
+              </h3>
+
+              <p>
+                Revisa nuevas solicitudes
+                para aprobar o rechazar.
+              </p>
+
+            </div>
+
+            <div class="flecha">
+              ›
+            </div>
+
+          </button>
+
+
+          <button
+            class="modulo"
+            type="button"
+            data-modulo="historialSupervisor"
+          >
+
+            <div class="modulo-icono">
+              🗂
+            </div>
+
+            <div>
+
+              <h3>
+                Historial de revisión
+              </h3>
+
+              <p>
+                Consulta las solicitudes
+                ya aprobadas o rechazadas.
+              </p>
+
+            </div>
+
+            <div class="flecha">
+              ›
+            </div>
+
+          </button>
+
+        </div>
+
+      </section>
+
+
+      <!-- ===================================================
+           ADMINISTRADOR
+      ==================================================== -->
+
+      <section
+        id="seccionAdministrador"
+        class="seccion hidden"
+      >
+
+        <h2>
+          Administración
+        </h2>
+
+        <p class="seccion-subtitulo">
+          Gestión general y conciliación de horas extras.
+        </p>
+
+
+        <div class="grid-modulos">
+
+          <button
+            class="modulo"
+            type="button"
+            data-modulo="todasSolicitudes"
+          >
+
+            <div class="modulo-icono">
+              📑
+            </div>
+
+            <div>
+
+              <h3>
+                Todas las solicitudes
+              </h3>
+
+              <p>
+                Revisa solicitudes de todas
+                las áreas y sus estados.
+              </p>
+
+            </div>
+
+            <div class="flecha">
+              ›
+            </div>
+
+          </button>
+
+
+          <button
+            class="modulo"
+            type="button"
+            data-modulo="usuarios"
+          >
+
+            <div class="modulo-icono">
+              👥
+            </div>
+
+            <div>
+
+              <h3>
+                Usuarios
+              </h3>
+
+              <p>
+                Administra trabajadores,
+                supervisores y permisos.
+              </p>
+
+            </div>
+
+            <div class="flecha">
+              ›
+            </div>
+
+          </button>
+
+
+          <button
+            class="modulo"
+            type="button"
+            data-modulo="conciliacionSap"
+          >
+
+            <div class="modulo-icono">
+              🔎
+            </div>
+
+            <div>
+
+              <h3>
+                Conciliación SAP
+              </h3>
+
+              <p>
+                Cruza automáticamente las HHEE
+                aprobadas con el Excel de SAP.
+              </p>
+
+            </div>
+
+            <div class="flecha">
+              ›
+            </div>
+
+          </button>
+
+
+          <button
+            class="modulo"
+            type="button"
+            data-modulo="informePdf"
+          >
+
+            <div class="modulo-icono">
+              📄
+            </div>
+
+            <div>
+
+              <h3>
+                Informe PDF
+              </h3>
+
+              <p>
+                Genera el informe final
+                de conciliación para Administración.
+              </p>
+
+            </div>
+
+            <div class="flecha">
+              ›
+            </div>
+
+          </button>
+
+        </div>
+
+      </section>
+
+
+      <!-- ===================================================
+           PANEL
+      ==================================================== -->
+
+      <section
+        id="panelModulo"
+        class="hidden"
+      >
+
+        <div class="panel-encabezado">
+
+          <div>
+
+            <h2 id="tituloModulo">
+              Módulo
+            </h2>
+
+            <p id="descripcionModulo">
+              Descripción
+            </p>
+
+          </div>
+
+
+          <button
+            id="botonCerrarPanel"
+            class="cerrar-panel"
+            type="button"
+          >
+            Cerrar
+          </button>
+
+        </div>
+
+
+        <div class="aviso-construccion">
+          El acceso y los permisos ya están funcionando.
+          Este módulo se desarrollará en el siguiente paso.
+        </div>
+
+      </section>
+
+    </main>
+
+  </div>
+
+
+  <!-- =======================================================
+       TOAST
+  ======================================================== -->
+
+  <div id="toastContainer"></div>
+
+
+  <!-- =======================================================
+       FIREBASE
+  ======================================================== -->
+
+  <script type="module">
+
+    /*
+      =========================================================
+      FIREBASE SDK 12.16.0
+      =========================================================
+    */
+
+    import {
+      initializeApp
+    } from
+      "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+
+
+    import {
+      getAuth,
+      signInWithEmailAndPassword,
+      signOut,
+      onAuthStateChanged,
+      sendPasswordResetEmail
+    } from
+      "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+
+
+    import {
+      getFirestore,
+      doc,
+      getDoc
+    } from
+      "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+
+
+    /*
+      =========================================================
+      CONFIGURACIÓN REAL DE TU PROYECTO FIREBASE
+      =========================================================
+    */
+
+    const firebaseConfig = {
+
+      apiKey:
+        "AIzaSyCtZny0My5plZKF3VIOFY0MgTdY8NN82ek",
+
+      authDomain:
+        "hhee-antofagasta.firebaseapp.com",
+
+      projectId:
+        "hhee-antofagasta",
+
+      storageBucket:
+        "hhee-antofagasta.firebasestorage.app",
+
+      messagingSenderId:
+        "1004191970210",
+
+      appId:
+        "1:1004191970210:web:c8be9ae46af57d2b7138fb",
+
+      measurementId:
+        "G-9PD7MCBCRS"
+
+    };
+
+
+    /*
+      =========================================================
+      INICIALIZAR FIREBASE
+      =========================================================
+    */
+
+    const app =
+      initializeApp(
+        firebaseConfig
+      );
+
+
+    const auth =
+      getAuth(app);
+
+
+    const db =
+      getFirestore(app);
+
+
+    /*
+      =========================================================
+      VARIABLES
+      =========================================================
+    */
+
+    let usuarioActual =
+      null;
+
+    let perfilActual =
+      null;
+
+
+    /*
+      =========================================================
+      ELEMENTOS
+      =========================================================
+    */
+
+    const pantallaCarga =
+      document.getElementById(
+        "pantallaCarga"
+      );
+
+
+    const pantallaLogin =
+      document.getElementById(
+        "pantallaLogin"
+      );
+
+
+    const pantallaApp =
+      document.getElementById(
+        "pantallaApp"
+      );
+
+
+    const formLogin =
+      document.getElementById(
+        "formLogin"
+      );
+
+
+    const correoInput =
+      document.getElementById(
+        "correo"
+      );
+
+
+    const passwordInput =
+      document.getElementById(
+        "password"
+      );
+
+
+    const botonIngresar =
+      document.getElementById(
+        "botonIngresar"
+      );
+
+
+    const mensajeLogin =
+      document.getElementById(
+        "mensajeLogin"
+      );
+
+
+    const seccionTrabajador =
+      document.getElementById(
+        "seccionTrabajador"
+      );
+
+
+    const seccionSupervisor =
+      document.getElementById(
+        "seccionSupervisor"
+      );
+
+
+    const seccionAdministrador =
+      document.getElementById(
+        "seccionAdministrador"
+      );
+
+
+    /*
+      =========================================================
+      FUNCIONES DE PANTALLA
+      =========================================================
+    */
+
+    function mostrarCarga() {
+
+      pantallaCarga.classList.remove(
+        "hidden"
+      );
+
+
+      pantallaLogin.classList.add(
+        "hidden"
+      );
+
+
+      pantallaApp.classList.add(
+        "hidden"
+      );
+
+    }
+
+
+    function mostrarLogin() {
+
+      pantallaCarga.classList.add(
+        "hidden"
+      );
+
+
+      pantallaApp.classList.add(
+        "hidden"
+      );
+
+
+      pantallaLogin.classList.remove(
+        "hidden"
+      );
+
+    }
+
+
+    function mostrarAplicacion() {
+
+      pantallaCarga.classList.add(
+        "hidden"
+      );
+
+
+      pantallaLogin.classList.add(
+        "hidden"
+      );
+
+
+      pantallaApp.classList.remove(
+        "hidden"
+      );
+
+    }
+
+
+    function mostrarMensajeLogin(
+      mensaje,
+      tipo = "error"
+    ) {
+
+      mensajeLogin.textContent =
+        mensaje;
+
+
+      mensajeLogin.className =
+        `mensaje-login ${tipo}`;
+
+
+      mensajeLogin.classList.remove(
+        "hidden"
+      );
+
+    }
+
+
+    function limpiarMensajeLogin() {
+
+      mensajeLogin.textContent =
+        "";
+
+
+      mensajeLogin.classList.add(
+        "hidden"
+      );
+
+    }
+
+
+    function mostrarToast(
+      mensaje,
+      tipo = "info"
+    ) {
+
+      const contenedor =
+        document.getElementById(
+          "toastContainer"
+        );
+
+
+      const toast =
+        document.createElement(
+          "div"
+        );
+
+
+      toast.className =
+        `toast ${tipo}`;
+
+
+      toast.textContent =
+        mensaje;
+
+
+      contenedor.appendChild(
+        toast
+      );
+
+
+      setTimeout(
+        () => {
+          toast.remove();
+        },
+        3500
+      );
+
+    }
+
+
+    /*
+      =========================================================
+      PERFIL DEL USUARIO
+      =========================================================
+    */
+
+    async function obtenerPerfil(
+      user
+    ) {
+
+      const referencia =
+        doc(
+          db,
+          "usuarios",
+          user.uid
+        );
+
+
+      const snapshot =
+        await getDoc(
+          referencia
+        );
+
+
+      if (!snapshot.exists()) {
+
+        throw new Error(
+          "PERFIL_NO_EXISTE"
+        );
+
+      }
+
+
+      const perfil =
+        snapshot.data();
+
+
+      /*
+        IMPORTANTE:
+
+        Se usan exactamente los nombres
+        que tú ya tienes en Firestore:
+
+        Activo
+        Apellido
+        Area
+        Correo
+        Nombre
+        Rut
+        esAdministrador
+        esSupervisor
+        puedeSolicitarHE
+        supervisorcorreo
+      */
+
+
+      if (perfil.Activo !== true) {
+
+        throw new Error(
+          "USUARIO_INACTIVO"
+        );
+
+      }
+
+
+      return perfil;
+
+    }
+
+
+    /*
+      =========================================================
+      PINTAR PERFIL
+      =========================================================
+    */
+
+    function obtenerNombreCompleto(
+      perfil
+    ) {
+
+      return [
+        perfil.Nombre || "",
+        perfil.Apellido || ""
+      ]
+        .join(" ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+    }
+
+
+    function obtenerIniciales(
+      perfil
+    ) {
+
+      const nombre =
+        String(
+          perfil.Nombre || ""
+        ).trim();
+
+
+      const apellido =
+        String(
+          perfil.Apellido || ""
+        ).trim();
+
+
+      const primera =
+        nombre
+          ? nombre.charAt(0)
+          : "";
+
+
+      const segunda =
+        apellido
+          ? apellido.charAt(0)
+          : "";
+
+
+      return (
+        primera + segunda
+      ).toUpperCase() || "U";
+
+    }
+
+
+    function pintarPerfil(
+      perfil,
+      user
+    ) {
+
+      const nombreCompleto =
+        obtenerNombreCompleto(
+          perfil
+        ) ||
+        user.email ||
+        "Usuario";
+
+
+      document.getElementById(
+        "nombreHeader"
+      ).textContent =
+        nombreCompleto;
+
+
+      document.getElementById(
+        "areaHeader"
+      ).textContent =
+        perfil.Area || "Sin área";
+
+
+      document.getElementById(
+        "nombreBienvenida"
+      ).textContent =
+        perfil.Nombre ||
+        nombreCompleto;
+
+
+      document.getElementById(
+        "perfilRut"
+      ).textContent =
+        perfil.Rut || "-";
+
+
+      document.getElementById(
+        "perfilArea"
+      ).textContent =
+        perfil.Area || "-";
+
+
+      document.getElementById(
+        "perfilCorreo"
+      ).textContent =
+        perfil.Correo ||
+        user.email ||
+        "-";
+
+
+      document.getElementById(
+        "avatarUsuario"
+      ).textContent =
+        obtenerIniciales(
+          perfil
+        );
+
+
+      /*
+        MOSTRAR MÓDULOS SEGÚN PERMISOS
+      */
+
+
+      seccionTrabajador.classList.toggle(
+        "hidden",
+        perfil.puedeSolicitarHE !== true
+      );
+
+
+      seccionSupervisor.classList.toggle(
+        "hidden",
+        perfil.esSupervisor !== true
+      );
+
+
+      seccionAdministrador.classList.toggle(
+        "hidden",
+        perfil.esAdministrador !== true
+      );
+
+
+      /*
+        BADGES
+      */
+
+
+      const badges =
+        document.getElementById(
+          "badgesUsuario"
+        );
+
+
+      badges.replaceChildren();
+
+
+      if (
+        perfil.puedeSolicitarHE === true
+      ) {
+
+        const badge =
+          document.createElement(
+            "span"
+          );
+
+
+        badge.className =
+          "badge badge-trabajador";
+
+
+        badge.textContent =
+          "Trabajador habilitado";
+
+
+        badges.appendChild(
+          badge
+        );
+
+      }
+
+
+      if (
+        perfil.esSupervisor === true
+      ) {
+
+        const badge =
+          document.createElement(
+            "span"
+          );
+
+
+        badge.className =
+          "badge badge-supervisor";
+
+
+        badge.textContent =
+          "Supervisor";
+
+
+        badges.appendChild(
+          badge
+        );
+
+      }
+
+
+      if (
+        perfil.esAdministrador === true
+      ) {
+
+        const badge =
+          document.createElement(
+            "span"
+          );
+
+
+        badge.className =
+          "badge badge-admin";
+
+
+        badge.textContent =
+          "Administrador";
+
+
+        badges.appendChild(
+          badge
+        );
+
+      }
+
+    }
+
+
+    /*
+      =========================================================
+      MENSAJES DE ERROR
+      =========================================================
+    */
+
+    function traducirError(
+      error
+    ) {
+
+      const codigo =
+        error?.code || "";
+
+
+      if (
+        codigo ===
+        "auth/invalid-credential"
+      ) {
+
+        return (
+          "Correo o contraseña incorrectos."
+        );
+
+      }
+
+
+      if (
+        codigo ===
+        "auth/invalid-email"
+      ) {
+
+        return (
+          "El correo ingresado no es válido."
+        );
+
+      }
+
+
+      if (
+        codigo ===
+        "auth/user-disabled"
+      ) {
+
+        return (
+          "Esta cuenta se encuentra deshabilitada."
+        );
+
+      }
+
+
+      if (
+        codigo ===
+        "auth/too-many-requests"
+      ) {
+
+        return (
+          "Se realizaron demasiados intentos. Intenta nuevamente más tarde."
+        );
+
+      }
+
+
+      if (
+        codigo ===
+        "auth/network-request-failed"
+      ) {
+
+        return (
+          "No hay conexión con Firebase. Revisa tu conexión a Internet."
+        );
+
+      }
+
+
+      if (
+        error?.message ===
+        "PERFIL_NO_EXISTE"
+      ) {
+
+        return (
+          "Tu cuenta existe, pero todavía no está autorizada en el sistema HHEE."
+        );
+
+      }
+
+
+      if (
+        error?.message ===
+        "USUARIO_INACTIVO"
+      ) {
+
+        return (
+          "Tu usuario está desactivado. Contacta al administrador."
+        );
+
+      }
+
+
+      return (
+        "No fue posible iniciar sesión."
+      );
+
+    }
+
+
+    /*
+      =========================================================
+      INICIAR SESIÓN
+      =========================================================
+    */
+
+    formLogin.addEventListener(
+      "submit",
+      async event => {
+
+        event.preventDefault();
+
+
+        limpiarMensajeLogin();
+
+
+        const correo =
+          correoInput.value.trim();
+
+
+        const password =
+          passwordInput.value;
+
+
+        if (
+          !correo ||
+          !password
+        ) {
+
+          mostrarMensajeLogin(
+            "Ingresa tu correo y contraseña."
+          );
+
+          return;
+
+        }
+
+
+        botonIngresar.disabled =
+          true;
+
+
+        botonIngresar.textContent =
+          "Ingresando...";
+
+
+        try {
+
+          await signInWithEmailAndPassword(
+            auth,
+            correo,
+            password
+          );
+
+        }
+        catch (error) {
+
+          console.error(
+            "Error de autenticación:",
+            error
+          );
+
+
+          mostrarMensajeLogin(
+            traducirError(
+              error
+            )
+          );
+
+        }
+        finally {
+
+          botonIngresar.disabled =
+            false;
+
+
+          botonIngresar.textContent =
+            "Ingresar";
+
+        }
+
+      }
+    );
+
+
+    /*
+      =========================================================
+      MOSTRAR CONTRASEÑA
+      =========================================================
+    */
+
+    document.getElementById(
+      "botonVerPassword"
+    ).addEventListener(
+      "click",
+      () => {
+
+        if (
+          passwordInput.type ===
+          "password"
+        ) {
+
+          passwordInput.type =
+            "text";
+
+        }
+        else {
+
+          passwordInput.type =
+            "password";
+
+        }
+
+      }
+    );
+
+
+    /*
+      =========================================================
+      RECUPERAR CONTRASEÑA
+      =========================================================
+    */
+
+    document.getElementById(
+      "botonRecuperar"
+    ).addEventListener(
+      "click",
+      async () => {
+
+        limpiarMensajeLogin();
+
+
+        const correo =
+          correoInput.value.trim();
+
+
+        if (!correo) {
+
+          mostrarMensajeLogin(
+            "Escribe primero tu correo electrónico."
+          );
+
+
+          correoInput.focus();
+
+
+          return;
+
+        }
+
+
+        try {
+
+          await sendPasswordResetEmail(
+            auth,
+            correo
+          );
+
+
+          mostrarMensajeLogin(
+            "Si la cuenta está registrada, recibirás un correo para restablecer tu contraseña.",
+            "exito"
+          );
+
+        }
+        catch (error) {
+
+          console.error(
+            "Error recuperación:",
+            error
+          );
+
+
+          mostrarMensajeLogin(
+            "No fue posible enviar el correo de recuperación."
+          );
+
+        }
+
+      }
+    );
+
+
+    /*
+      =========================================================
+      CERRAR SESIÓN
+      =========================================================
+    */
+
+    document.getElementById(
+      "botonSalir"
+    ).addEventListener(
+      "click",
+      async () => {
+
+        try {
+
+          await signOut(
+            auth
+          );
+
+        }
+        catch (error) {
+
+          console.error(
+            error
+          );
+
+
+          mostrarToast(
+            "No fue posible cerrar la sesión.",
+            "error"
+          );
+
+        }
+
+      }
+    );
+
+
+    /*
+      =========================================================
+      MÓDULOS
+      =========================================================
+    */
+
+    const informacionModulos = {
+
+      ingresoNormal: {
+
+        titulo:
+          "Ingresar horas extras",
+
+        descripcion:
+          "Formulario para ingresar horas extras normales de lunes a sábado. Aquí registraremos fecha, hora de inicio, hora de término, motivo del trabajo, justificación, CAPEX y extensión de faena."
+
+      },
+
+
+      domingoFeriado: {
+
+        titulo:
+          "Domingos y feriados",
+
+        descripcion:
+          "Formulario especial para seleccionar Domingo o Feriado, tipo de trabajo, horario, justificación, CAPEX y extensión de faena."
+
+      },
+
+
+      misSolicitudes: {
+
+        titulo:
+          "Mis solicitudes",
+
+        descripcion:
+          "Aquí el trabajador podrá revisar sus solicitudes Pendientes, Aprobadas y Rechazadas. Mientras estén Pendientes podrán modificarse o eliminarse."
+
+      },
+
+
+      misHoras: {
+
+        titulo:
+          "Mis horas",
+
+        descripcion:
+          "Aquí se mostrará el resumen de horas extras aprobadas, separadas automáticamente en 50%, 75% y 100%."
+
+      },
+
+
+      pendientesSupervisor: {
+
+        titulo:
+          "Solicitudes pendientes",
+
+        descripcion:
+          "El supervisor verá únicamente las solicitudes de los trabajadores asignados a su correo y podrá aprobarlas o rechazarlas."
+
+      },
+
+
+      historialSupervisor: {
+
+        titulo:
+          "Historial de revisión",
+
+        descripcion:
+          "Aquí el supervisor podrá consultar las solicitudes de su equipo que ya fueron aprobadas o rechazadas."
+
+      },
+
+
+      todasSolicitudes: {
+
+        titulo:
+          "Todas las solicitudes",
+
+        descripcion:
+          "Vista administrativa con solicitudes de Administración, Líneas, Subestaciones y Operaciones."
+
+      },
+
+
+      usuarios: {
+
+        titulo:
+          "Administración de usuarios",
+
+        descripcion:
+          "Aquí se administrarán trabajadores, supervisores, área, correo, RUT, permisos y supervisor asignado."
+
+      },
+
+
+      conciliacionSap: {
+
+        titulo:
+          "Conciliación SAP",
+
+        descripcion:
+          "El sistema obtendrá automáticamente desde Firebase las horas extras aprobadas del período seleccionado. El administrador cargará únicamente el Excel exportado desde SAP y se realizará el cruce por trabajador, fecha y recargo."
+
+      },
+
+
+      informePdf: {
+
+        titulo:
+          "Informe final PDF",
+
+        descripcion:
+          "Una vez revisada la conciliación HHEE versus SAP, el administrador podrá generar el informe final en formato PDF para el jefe de Administración."
+
+      }
+
+    };
+
+
+    document
+      .querySelectorAll(
+        "[data-modulo]"
+      )
+      .forEach(
+        boton => {
+
+          boton.addEventListener(
+            "click",
+            () => {
+
+              const clave =
+                boton.dataset.modulo;
+
+
+              const informacion =
+                informacionModulos[
+                  clave
+                ];
+
+
+              if (!informacion) {
+                return;
+              }
+
+
+              document.getElementById(
+                "tituloModulo"
+              ).textContent =
+                informacion.titulo;
+
+
+              document.getElementById(
+                "descripcionModulo"
+              ).textContent =
+                informacion.descripcion;
+
+
+              const panel =
+                document.getElementById(
+                  "panelModulo"
+                );
+
+
+              panel.classList.remove(
+                "hidden"
+              );
+
+
+              panel.scrollIntoView({
+                behavior:
+                  "smooth",
+
+                block:
+                  "start"
+              });
+
+            }
+          );
+
+        }
+      );
+
+
+    document.getElementById(
+      "botonCerrarPanel"
+    ).addEventListener(
+      "click",
+      () => {
+
+        document.getElementById(
+          "panelModulo"
+        ).classList.add(
+          "hidden"
+        );
+
+      }
+    );
+
+
+    /*
+      =========================================================
+      CONTROL DE SESIÓN
+      =========================================================
+    */
+
+    onAuthStateChanged(
+      auth,
+      async user => {
+
+        /*
+          SIN SESIÓN
+        */
+
+        if (!user) {
+
+          usuarioActual =
+            null;
+
+
+          perfilActual =
+            null;
+
+
+          passwordInput.value =
+            "";
+
+
+          document.getElementById(
+            "panelModulo"
+          ).classList.add(
+            "hidden"
+          );
+
+
+          mostrarLogin();
+
+
+          return;
+
+        }
+
+
+        /*
+          SESIÓN ACTIVA
+        */
+
+        mostrarCarga();
+
+
+        try {
+
+          const perfil =
+            await obtenerPerfil(
+              user
+            );
+
+
+          usuarioActual =
+            user;
+
+
+          perfilActual =
+            perfil;
+
+
+          pintarPerfil(
+            perfil,
+            user
+          );
+
+
+          mostrarAplicacion();
+
+        }
+        catch (error) {
+
+          console.error(
+            "Error cargando perfil:",
+            error
+          );
+
+
+          const mensaje =
+            traducirError(
+              error
+            );
+
+
+          try {
+
+            await signOut(
+              auth
+            );
+
+          }
+          catch (errorSalir) {
+
+            console.error(
+              errorSalir
+            );
+
+          }
+
+
+          mostrarLogin();
+
+
+          mostrarMensajeLogin(
+            mensaje
+          );
+
+        }
+
+      }
+    );
+
+  </script>
+
+</body>
+</html>
