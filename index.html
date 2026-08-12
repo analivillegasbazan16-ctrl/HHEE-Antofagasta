@@ -2,8 +2,22 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
   <meta name="theme-color" content="#003b71">
+
+  <!-- Aplicación instalable -->
+  <link rel="manifest" href="./manifest.webmanifest">
+
+  <!-- Configuración para iPhone / iPad -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="HHEE">
+
   <title>Gestión de Horas Extras</title>
 
   <!-- Excel: lectura del SAP y exportación mensual -->
@@ -12,7 +26,7 @@
   <!-- PDF del informe de conciliación -->
   <script src="https://unpkg.com/jspdf@4.2.1/dist/jspdf.umd.min.js"></script>
   <script src="https://unpkg.com/jspdf-autotable@5.0.8/dist/jspdf.plugin.autotable.min.js"></script>
-  
+
   <style>
     :root {
       --azul:#003b71;
