@@ -143,6 +143,8 @@
           <div class="campo"><label>Contraseña</label><div class="passWrap"><input id="password" type="password" autocomplete="current-password" required><button id="verPassword" type="button">👁</button></div></div>
           <button id="btnLogin" class="btn btnPrimario w100" type="submit">Ingresar</button>
           <button id="btnRecuperar" class="linkBtn" type="button">Olvidé mi contraseña</button>
+          <div style="margin:6px 0 4px;border-top:1px solid #e5edf3"></div>
+          <button id="btnActivarCuenta" class="linkBtn" type="button">¿Primera vez? Activar mi cuenta</button>
         </form>
         <div style="margin-top:20px;color:#7a8798;font-size:11px;text-align:center">Sistema de uso restringido. Solo usuarios previamente autorizados pueden acceder.</div>
       </div>
@@ -213,7 +215,9 @@
     signInWithEmailAndPassword,
     signOut,
     onAuthStateChanged,
-    sendPasswordResetEmail
+    sendPasswordResetEmail,
+    createUserWithEmailAndPassword,
+    deleteUser
   } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
   import {
     getFirestore,
@@ -227,7 +231,8 @@
     deleteDoc,
     query,
     where,
-    serverTimestamp
+    serverTimestamp,
+    writeBatch
   } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -248,6 +253,8 @@
   let perfilActual = null;
   let cacheSolicitudes = new Map();
   let cacheUsuarios = new Map();
+  let cacheAutorizaciones = new Map();
+  let activacionEnProceso = false;
   let sapFilas = [];
   let sapCabeceras = [];
   let ultimaConciliacion = null;
@@ -304,6 +311,77 @@
   $('formLogin').addEventListener('submit',async e=>{e.preventDefault();$('mensajeLogin').classList.add('hidden');$('btnLogin').disabled=true;$('btnLogin').textContent='Ingresando...';try{await signInWithEmailAndPassword(auth,$('correo').value.trim(),$('password').value)}catch(err){loginMsg(err.code==='auth/invalid-credential'?'Correo o contraseña incorrectos.':'No fue posible iniciar sesión.')}finally{$('btnLogin').disabled=false;$('btnLogin').textContent='Ingresar'}})
   $('verPassword').addEventListener('click',()=>{$('password').type=$('password').type==='password'?'text':'password'})
   $('btnRecuperar').addEventListener('click',async()=>{const c=$('correo').value.trim();if(!c)return loginMsg('Escribe primero tu correo.');try{await sendPasswordResetEmail(auth,c);loginMsg('Si la cuenta está registrada, recibirás un correo de recuperación.','exito')}catch{loginMsg('No fue posible enviar el correo de recuperación.')}})
+
+  function abrirActivacionCuenta(){
+    modal(`<h3>Activar mi cuenta</h3>
+      <div class="mensaje mensajeInfo">Tu correo debe haber sido autorizado previamente por Administración. No necesitas conocer ningún UID.</div>
+      <form id="formActivacion">
+        <div class="campo"><label>Correo corporativo *</label><input id="actCorreo" type="email" autocomplete="username" value="${esc(normalizarCorreo($('correo').value))}" required></div>
+        <div class="grid2">
+          <div><label>Crear contraseña *</label><input id="actPassword" type="password" autocomplete="new-password" minlength="6" required><div class="nota">Mínimo 6 caracteres.</div></div>
+          <div><label>Confirmar contraseña *</label><input id="actPassword2" type="password" autocomplete="new-password" minlength="6" required></div>
+        </div>
+        <div class="acciones"><button type="button" class="btn btnSecundario" onclick="window.cerrarModal()">Cancelar</button><button id="btnConfirmarActivacion" class="btn btnPrimario" type="submit">Activar cuenta</button></div>
+      </form>`);
+    $('formActivacion').addEventListener('submit',activarCuenta);
+  }
+  $('btnActivarCuenta').addEventListener('click',abrirActivacionCuenta);
+
+  async function activarCuenta(e){
+    e.preventDefault();
+    const correo=normalizarCorreo($('actCorreo').value);
+    const password=$('actPassword').value;
+    const password2=$('actPassword2').value;
+    if(!correo)return toast('Ingresa tu correo.','error');
+    if(password.length<6)return toast('La contraseña debe tener al menos 6 caracteres.','error');
+    if(password!==password2)return toast('Las contraseñas no coinciden.','error');
+    const btn=$('btnConfirmarActivacion');btn.disabled=true;btn.textContent='Activando...';
+    let creado=null;
+    try{
+      activacionEnProceso=true;
+      const cred=await createUserWithEmailAndPassword(auth,correo,password);
+      creado=cred.user;
+      const preRef=doc(db,'preautorizados',correo);
+      const preSnap=await getDoc(preRef);
+      if(!preSnap.exists())throw new Error('NO_AUTORIZADO');
+      const pre=preSnap.data();
+      if(pre.Activo!==true)throw new Error('AUTORIZACION_INACTIVA');
+      if(pre.activado===true&&pre.uid&&pre.uid!==creado.uid)throw new Error('AUTORIZACION_USADA');
+      const perfil={
+        Nombre:pre.Nombre||'',Apellido:pre.Apellido||'',Rut:pre.Rut||'',Area:pre.Area||'',Correo:correo,
+        supervisorcorreo:normalizarCorreo(pre.supervisorcorreo||''),Activo:pre.Activo===true,
+        puedeSolicitarHE:pre.puedeSolicitarHE===true,esSupervisor:pre.esSupervisor===true,esAdministrador:pre.esAdministrador===true,
+        fechaActivacion:serverTimestamp(),origenActivacion:'preautorizacion'
+      };
+      const batch=writeBatch(db);
+      batch.set(doc(db,'usuarios',creado.uid),perfil);
+      batch.update(preRef,{activado:true,uid:creado.uid,fechaActivacion:serverTimestamp()});
+      await batch.commit();
+      perfilActual=await obtenerPerfil(creado);
+      usuarioActual=creado;
+      activacionEnProceso=false;
+      cerrarModal();
+      pintarPerfil(perfilActual,creado);
+      mostrarApp();
+      toast('Cuenta activada correctamente. Ya puedes usar el sistema.','exito');
+    }catch(err){
+      console.error(err);
+      if(creado){try{await deleteUser(creado)}catch(e2){console.error('No se pudo eliminar la cuenta incompleta',e2)}}
+      activacionEnProceso=false;
+      try{await signOut(auth)}catch{}
+      mostrarLogin();
+      const msg=err.code==='auth/email-already-in-use'?'Ese correo ya tiene una cuenta. Usa Ingresar u Olvidé mi contraseña.':
+        err.code==='auth/weak-password'?'La contraseña es demasiado débil.':
+        err.code==='auth/invalid-email'?'El correo no es válido.':
+        err.message==='NO_AUTORIZADO'?'Tu correo todavía no ha sido autorizado por Administración.':
+        err.message==='AUTORIZACION_INACTIVA'?'Tu autorización está desactivada. Contacta a Administración.':
+        err.message==='AUTORIZACION_USADA'?'Esta autorización ya fue utilizada. Contacta a Administración.':
+        err.code?.includes('permission')?'No fue posible validar tu autorización por las reglas de Firestore. Publica las reglas nuevas.':
+        'No fue posible activar la cuenta.';
+      loginMsg(msg);
+    }finally{if(btn){btn.disabled=false;btn.textContent='Activar cuenta'}}
+  }
+
   $('btnSalir').addEventListener('click',()=>signOut(auth));
 
   /* =========================== CÁLCULO HHEE =========================== */
@@ -412,11 +490,83 @@
   /* =========================== ADMIN SOLICITUDES =========================== */
   async function renderTodasSolicitudes(){const arr=await cargarTodasSolicitudes();const areas=[...new Set(arr.map(x=>x.Area).filter(Boolean))].sort();$('contenidoModulo').innerHTML=`<div class="bloque"><div class="grid3"><div><label>Estado</label><select id="admEstado"><option value="">Todos</option><option value="pendiente">Pendiente</option><option value="aprobada">Aprobada</option><option value="rechazada">Rechazada</option></select></div><div><label>Área</label><select id="admArea"><option value="">Todas</option>${areas.map(a=>`<option>${esc(a)}</option>`).join('')}</select></div><div><label>Mes</label><input id="admMes" type="month"></div></div></div><div id="admTabla"></div>`;const aplicar=()=>{const e=$('admEstado').value,a=$('admArea').value,m=$('admMes').value;const f=arr.filter(x=>(!e||normEstado(x.estado)===e)&&(!a||x.Area===a)&&(!m||String(x.fechaInicio||'').startsWith(m)));$('admTabla').innerHTML=tablaSolicitudes(f,'admin')};['admEstado','admArea','admMes'].forEach(k=>$(k).addEventListener('change',aplicar));aplicar()}
 
-  /* =========================== USUARIOS =========================== */
-  async function cargarUsuarios(){const s=await getDocs(collection(db,'usuarios'));const arr=s.docs.map(d=>({id:d.id,...d.data()}));arr.sort((a,b)=>nombreCompleto(a).localeCompare(nombreCompleto(b),'es'));arr.forEach(x=>cacheUsuarios.set(x.id,x));return arr}
-  async function renderUsuarios(){const arr=await cargarUsuarios();$('contenidoModulo').innerHTML=`<div class="mensaje mensajeInfo">Este módulo administra el perfil de Firestore. Para un usuario nuevo, primero crea su cuenta en Firebase Authentication y luego crea aquí su perfil usando el UID de Authentication.</div><div class="acciones" style="justify-content:flex-start"><button class="btn btnPrimario" id="nuevoPerfil">Crear perfil</button></div><div class="tablaWrap"><table class="tabla"><thead><tr><th>Nombre</th><th>Correo</th><th>Área</th><th>Activo</th><th>Solicita HHEE</th><th>Supervisor</th><th>Administrador</th><th></th></tr></thead><tbody>${arr.map(u=>`<tr><td>${esc(nombreCompleto(u))}<br><small>${esc(u.Rut||'')}</small></td><td>${esc(u.Correo||'')}</td><td>${esc(u.Area||'')}</td><td>${u.Activo===true?'Sí':'No'}</td><td>${u.puedeSolicitarHE===true?'Sí':'No'}</td><td>${u.esSupervisor===true?'Sí':'No'}</td><td>${u.esAdministrador===true?'Sí':'No'}</td><td><button class="btn btnSecundario" onclick="window.editarUsuario('${u.id}')">Editar</button></td></tr>`).join('')}</tbody></table></div>`;$('nuevoPerfil').addEventListener('click',()=>formUsuario(null))}
-  function formUsuario(u){const nuevo=!u;modal(`<h3>${nuevo?'Crear perfil':'Editar perfil'}</h3><form id="formUsuario"><div class="grid2"><div class="full"><label>UID de Firebase Authentication *</label><input id="uUid" value="${esc(u?.id||'')}" ${nuevo?'':'readonly'} required></div><div><label>Nombre *</label><input id="uNombre" value="${esc(u?.Nombre||'')}" required></div><div><label>Apellido *</label><input id="uApellido" value="${esc(u?.Apellido||'')}" required></div><div><label>RUT</label><input id="uRut" value="${esc(u?.Rut||'')}"></div><div><label>Área</label><input id="uArea" value="${esc(u?.Area||'')}"></div><div><label>Correo *</label><input id="uCorreo" type="email" value="${esc(u?.Correo||'')}" required></div><div><label>Correo supervisor</label><input id="uSupervisorCorreo" type="email" value="${esc(u?.supervisorcorreo||'')}"></div></div><div class="grid4" style="margin-top:14px"><div class="checkRow"><input id="uActivo" type="checkbox" ${u?.Activo!==false?'checked':''}><label>Activo</label></div><div class="checkRow"><input id="uSolicita" type="checkbox" ${u?.puedeSolicitarHE?'checked':''}><label>Solicita HHEE</label></div><div class="checkRow"><input id="uSupervisor" type="checkbox" ${u?.esSupervisor?'checked':''}><label>Supervisor</label></div><div class="checkRow"><input id="uAdmin" type="checkbox" ${u?.esAdministrador?'checked':''}><label>Administrador</label></div></div><div class="acciones"><button type="button" class="btn btnSecundario" onclick="window.cerrarModal()">Cancelar</button><button class="btn btnPrimario" type="submit">Guardar</button></div></form>`);$('formUsuario').addEventListener('submit',async e=>{e.preventDefault();const uid=$('uUid').value.trim();if(uid===usuarioActual.uid&&!$('uAdmin').checked)return toast('No puedes quitarte a ti misma el permiso de administrador.','error');const datos={Nombre:$('uNombre').value.trim(),Apellido:$('uApellido').value.trim(),Rut:$('uRut').value.trim(),Area:$('uArea').value.trim(),Correo:$('uCorreo').value.trim(),supervisorcorreo:$('uSupervisorCorreo').value.trim(),Activo:$('uActivo').checked,puedeSolicitarHE:$('uSolicita').checked,esSupervisor:$('uSupervisor').checked,esAdministrador:$('uAdmin').checked};try{await setDoc(doc(db,'usuarios',uid),datos,{merge:true});cerrarModal();toast('Perfil guardado.','exito');abrirModulo('usuarios')}catch(err){console.error(err);toast('No fue posible guardar el perfil.','error')}})}
-  window.editarUsuario=id=>formUsuario(cacheUsuarios.get(id));
+  /* =========================== USUARIOS / PREAUTORIZACIONES =========================== */
+  async function cargarUsuarios(){const s=await getDocs(collection(db,'usuarios'));const arr=s.docs.map(d=>({id:d.id,...d.data()}));arr.sort((a,b)=>nombreCompleto(a).localeCompare(nombreCompleto(b),'es'));cacheUsuarios.clear();arr.forEach(x=>cacheUsuarios.set(x.id,x));return arr}
+  async function cargarAutorizaciones(){const s=await getDocs(collection(db,'preautorizados'));const arr=s.docs.map(d=>({id:d.id,...d.data()}));arr.sort((a,b)=>nombreCompleto(a).localeCompare(nombreCompleto(b),'es'));cacheAutorizaciones.clear();arr.forEach(x=>cacheAutorizaciones.set(x.id,x));return arr}
+
+  async function renderUsuarios(){
+    const [usuarios,autorizaciones]=await Promise.all([cargarUsuarios(),cargarAutorizaciones()]);
+    const pendientes=autorizaciones.filter(a=>a.activado!==true);
+    const activadas=autorizaciones.filter(a=>a.activado===true);
+    $('contenidoModulo').innerHTML=`
+      <div class="mensaje mensajeInfo"><b>Nuevo flujo:</b> Administración autoriza a la persona aquí. El trabajador entra a la pantalla de inicio y pulsa <b>¿Primera vez? Activar mi cuenta</b>. Firebase genera el UID automáticamente.</div>
+      <div class="acciones" style="justify-content:flex-start"><button class="btn btnPrimario" id="nuevaAutorizacion">Autorizar usuario</button></div>
+
+      <div class="bloque" style="margin-top:16px"><h3>Autorizaciones pendientes</h3>
+        ${pendientes.length?`<div class="tablaWrap"><table class="tabla"><thead><tr><th>Nombre</th><th>Correo</th><th>Área</th><th>Solicita HHEE</th><th>Supervisor</th><th>Administrador</th><th>Acciones</th></tr></thead><tbody>${pendientes.map(a=>`<tr><td>${esc(nombreCompleto(a))}<br><small>${esc(a.Rut||'')}</small></td><td>${esc(a.Correo||a.id)}</td><td>${esc(a.Area||'')}</td><td>${a.puedeSolicitarHE===true?'Sí':'No'}</td><td>${a.esSupervisor===true?'Sí':'No'}</td><td>${a.esAdministrador===true?'Sí':'No'}</td><td><div class="miniAcciones"><button class="btn btnSecundario" onclick="window.editarAutorizacion('${encodeURIComponent(a.id)}')">Editar</button><button class="btn btnPeligro" onclick="window.eliminarAutorizacion('${encodeURIComponent(a.id)}')">Eliminar</button></div></td></tr>`).join('')}</tbody></table></div>`:'<div class="mensaje mensajeInfo">No hay autorizaciones pendientes.</div>'}
+      </div>
+
+      <div class="bloque"><h3>Usuarios activos</h3>
+        ${usuarios.length?`<div class="tablaWrap"><table class="tabla"><thead><tr><th>Nombre</th><th>Correo</th><th>Área</th><th>Activo</th><th>Solicita HHEE</th><th>Supervisor</th><th>Administrador</th><th>Acciones</th></tr></thead><tbody>${usuarios.map(u=>`<tr><td>${esc(nombreCompleto(u))}<br><small>${esc(u.Rut||'')}</small></td><td>${esc(u.Correo||'')}</td><td>${esc(u.Area||'')}</td><td>${u.Activo===true?'Sí':'No'}</td><td>${u.puedeSolicitarHE===true?'Sí':'No'}</td><td>${u.esSupervisor===true?'Sí':'No'}</td><td>${u.esAdministrador===true?'Sí':'No'}</td><td><button class="btn btnSecundario" onclick="window.editarPerfilActivo('${u.id}')">Editar</button></td></tr>`).join('')}</tbody></table></div>`:'<div class="mensaje mensajeInfo">Todavía no hay usuarios activos.</div>'}
+      </div>
+
+      ${activadas.length?`<div class="mensaje mensajeInfo">Autorizaciones ya utilizadas: <b>${activadas.length}</b>. Sus permisos actuales se administran desde la tabla <b>Usuarios activos</b>.</div>`:''}
+    `;
+    $('nuevaAutorizacion').addEventListener('click',()=>formAutorizacion(null));
+  }
+
+  function formAutorizacion(a){
+    const nuevo=!a;
+    modal(`<h3>${nuevo?'Autorizar usuario':'Editar autorización'}</h3>
+      <form id="formAutorizacion">
+        <div class="grid2">
+          <div><label>Nombre *</label><input id="aNombre" value="${esc(a?.Nombre||'')}" required></div>
+          <div><label>Apellido *</label><input id="aApellido" value="${esc(a?.Apellido||'')}" required></div>
+          <div><label>RUT</label><input id="aRut" value="${esc(a?.Rut||'')}"></div>
+          <div><label>Área</label><input id="aArea" value="${esc(a?.Area||'')}"></div>
+          <div><label>Correo *</label><input id="aCorreo" type="email" value="${esc(a?.Correo||a?.id||'')}" ${nuevo?'':'readonly'} required><div class="nota">Este correo será la llave de activación. No se necesita UID.</div></div>
+          <div><label>Correo supervisor</label><input id="aSupervisorCorreo" type="email" value="${esc(a?.supervisorcorreo||'')}"></div>
+        </div>
+        <div class="grid4" style="margin-top:14px">
+          <div class="checkRow"><input id="aActivo" type="checkbox" ${a?.Activo!==false?'checked':''}><label>Activo</label></div>
+          <div class="checkRow"><input id="aSolicita" type="checkbox" ${a?.puedeSolicitarHE?'checked':''}><label>Solicita HHEE</label></div>
+          <div class="checkRow"><input id="aSupervisor" type="checkbox" ${a?.esSupervisor?'checked':''}><label>Supervisor</label></div>
+          <div class="checkRow"><input id="aAdmin" type="checkbox" ${a?.esAdministrador?'checked':''}><label>Administrador</label></div>
+        </div>
+        ${a?.activado===true?'<div class="mensaje mensajeAviso" style="margin-top:14px">Esta autorización ya fue activada. Los cambios también se copiarán al perfil activo.</div>':''}
+        <div class="acciones"><button type="button" class="btn btnSecundario" onclick="window.cerrarModal()">Cancelar</button><button class="btn btnPrimario" type="submit">Guardar</button></div>
+      </form>`);
+    $('formAutorizacion').addEventListener('submit',async e=>{
+      e.preventDefault();
+      const correo=normalizarCorreo($('aCorreo').value);
+      if(!correo)return toast('Ingresa un correo válido.','error');
+      const datos={Nombre:$('aNombre').value.trim(),Apellido:$('aApellido').value.trim(),Rut:$('aRut').value.trim(),Area:$('aArea').value.trim(),Correo:correo,supervisorcorreo:normalizarCorreo($('aSupervisorCorreo').value),Activo:$('aActivo').checked,puedeSolicitarHE:$('aSolicita').checked,esSupervisor:$('aSupervisor').checked,esAdministrador:$('aAdmin').checked};
+      try{
+        if(nuevo){
+          const existente=await getDoc(doc(db,'preautorizados',correo));
+          if(existente.exists())return toast('Ese correo ya tiene una autorización.','error');
+          await setDoc(doc(db,'preautorizados',correo),{...datos,activado:false,uid:'',fechaAutorizacion:serverTimestamp(),fechaActualizacion:serverTimestamp(),autorizadoPor:correoActual()});
+        }else{
+          const original=cacheAutorizaciones.get(a.id)||a;
+          await setDoc(doc(db,'preautorizados',a.id),{...datos,fechaActualizacion:serverTimestamp()},{merge:true});
+          if(original.activado===true&&original.uid){
+            if(original.uid===usuarioActual.uid&&!datos.esAdministrador)return toast('No puedes quitarte a ti misma el permiso de administrador.','error');
+            await setDoc(doc(db,'usuarios',original.uid),{...datos,fechaActualizacion:serverTimestamp()},{merge:true});
+          }
+        }
+        cerrarModal();toast(nuevo?'Usuario autorizado. Ya puede activar su cuenta.':'Autorización actualizada.','exito');abrirModulo('usuarios');
+      }catch(err){console.error(err);toast(err.code?.includes('permission')?'Firestore rechazó la operación por permisos.':'No fue posible guardar la autorización.','error')}
+    });
+  }
+
+  window.editarAutorizacion=encoded=>{const id=decodeURIComponent(encoded);const a=cacheAutorizaciones.get(id);if(a)formAutorizacion(a)};
+  window.eliminarAutorizacion=async encoded=>{const id=decodeURIComponent(encoded),a=cacheAutorizaciones.get(id);if(!a)return;if(a.activado===true)return toast('Una autorización ya activada no se elimina desde aquí. Desactiva el perfil activo.','error');if(!confirm(`¿Eliminar la autorización de ${a.Correo||id}?`))return;try{await deleteDoc(doc(db,'preautorizados',id));toast('Autorización eliminada.','exito');abrirModulo('usuarios')}catch(err){console.error(err);toast('No fue posible eliminar la autorización.','error')}};
+
+  function formPerfilActivo(u){
+    modal(`<h3>Editar usuario activo</h3><form id="formPerfilActivo"><div class="grid2"><div><label>Nombre *</label><input id="pNombre" value="${esc(u?.Nombre||'')}" required></div><div><label>Apellido *</label><input id="pApellido" value="${esc(u?.Apellido||'')}" required></div><div><label>RUT</label><input id="pRut" value="${esc(u?.Rut||'')}"></div><div><label>Área</label><input id="pArea" value="${esc(u?.Area||'')}"></div><div><label>Correo</label><input id="pCorreo" type="email" value="${esc(u?.Correo||'')}" readonly></div><div><label>Correo supervisor</label><input id="pSupervisorCorreo" type="email" value="${esc(u?.supervisorcorreo||'')}"></div></div><div class="grid4" style="margin-top:14px"><div class="checkRow"><input id="pActivo" type="checkbox" ${u?.Activo!==false?'checked':''}><label>Activo</label></div><div class="checkRow"><input id="pSolicita" type="checkbox" ${u?.puedeSolicitarHE?'checked':''}><label>Solicita HHEE</label></div><div class="checkRow"><input id="pSupervisor" type="checkbox" ${u?.esSupervisor?'checked':''}><label>Supervisor</label></div><div class="checkRow"><input id="pAdmin" type="checkbox" ${u?.esAdministrador?'checked':''}><label>Administrador</label></div></div><div class="acciones"><button type="button" class="btn btnSecundario" onclick="window.cerrarModal()">Cancelar</button><button class="btn btnPrimario" type="submit">Guardar</button></div></form>`);
+    $('formPerfilActivo').addEventListener('submit',async e=>{e.preventDefault();if(u.id===usuarioActual.uid&&!$('pAdmin').checked)return toast('No puedes quitarte a ti misma el permiso de administrador.','error');const datos={Nombre:$('pNombre').value.trim(),Apellido:$('pApellido').value.trim(),Rut:$('pRut').value.trim(),Area:$('pArea').value.trim(),Correo:normalizarCorreo($('pCorreo').value),supervisorcorreo:normalizarCorreo($('pSupervisorCorreo').value),Activo:$('pActivo').checked,puedeSolicitarHE:$('pSolicita').checked,esSupervisor:$('pSupervisor').checked,esAdministrador:$('pAdmin').checked,fechaActualizacion:serverTimestamp()};try{await setDoc(doc(db,'usuarios',u.id),datos,{merge:true});const preId=normalizarCorreo(u.Correo||'');if(preId){const pre=await getDoc(doc(db,'preautorizados',preId));if(pre.exists())await setDoc(doc(db,'preautorizados',preId),{...datos,fechaActualizacion:serverTimestamp()},{merge:true})}cerrarModal();toast('Perfil actualizado.','exito');abrirModulo('usuarios')}catch(err){console.error(err);toast('No fue posible actualizar el perfil.','error')}});
+  }
+  window.editarPerfilActivo=id=>{const u=cacheUsuarios.get(id);if(u)formPerfilActivo(u)};
 
   /* =========================== EXPORTACIÓN =========================== */
   function selectPeriodo(prefix){const hoy=new Date();return `<div><label>Año</label><select id="${prefix}Anio">${Array.from({length:8},(_,i)=>hoy.getFullYear()-5+i).map(y=>`<option value="${y}" ${y===hoy.getFullYear()?'selected':''}>${y}</option>`).join('')}</select></div><div><label>Mes</label><select id="${prefix}Mes">${MESES.slice(1).map((m,i)=>`<option value="${i+1}" ${i+1===hoy.getMonth()+1?'selected':''}>${m}</option>`).join('')}</select></div>`}
@@ -451,7 +601,7 @@
   document.querySelectorAll('[data-modulo]').forEach(b=>b.addEventListener('click',()=>abrirModulo(b.dataset.modulo)));
   function cerrarPanel(){$('panelModulo').classList.add('hidden');$('contenidoModulo').innerHTML=''}window.cerrarPanel=cerrarPanel;$('cerrarPanel').addEventListener('click',cerrarPanel);
 
-  onAuthStateChanged(auth,async user=>{if(!user){usuarioActual=null;perfilActual=null;cacheSolicitudes.clear();cacheUsuarios.clear();mostrarLogin();return}mostrarCarga();try{usuarioActual=user;perfilActual=await obtenerPerfil(user);pintarPerfil(perfilActual,user);mostrarApp()}catch(err){console.error(err);try{await signOut(auth)}catch{}mostrarLogin();loginMsg(err.message==='PERFIL_NO_EXISTE'?'La cuenta existe, pero no tiene perfil HHEE.':err.message==='USUARIO_INACTIVO'?'Tu usuario está desactivado.':'No fue posible cargar tu perfil.')}});
+  onAuthStateChanged(auth,async user=>{if(!user){usuarioActual=null;perfilActual=null;cacheSolicitudes.clear();cacheUsuarios.clear();cacheAutorizaciones.clear();mostrarLogin();return}if(activacionEnProceso){mostrarCarga();return}mostrarCarga();try{usuarioActual=user;perfilActual=await obtenerPerfil(user);pintarPerfil(perfilActual,user);mostrarApp()}catch(err){console.error(err);try{await signOut(auth)}catch{}mostrarLogin();loginMsg(err.message==='PERFIL_NO_EXISTE'?'La cuenta existe, pero todavía no tiene perfil HHEE. Si es tu primera vez, usa “Activar mi cuenta”.':err.message==='USUARIO_INACTIVO'?'Tu usuario está desactivado.':'No fue posible cargar tu perfil.')}});
 </script>
 </body>
 </html>
