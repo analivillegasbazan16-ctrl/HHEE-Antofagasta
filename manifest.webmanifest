@@ -1,0 +1,12 @@
+{
+  "id": "/HHEE-Antofagasta/",
+  "name": "Gestión de Horas Extras",
+  "short_name": "HHEE",
+  "description": "Sistema de gestión, revisión y aprobación de horas extras",
+  "start_url": "/HHEE-Antofagasta/",
+  "scope": "/HHEE-Antofagasta/",
+  "display": "standalone",
+  "background_color": "#f3f7fa",
+  "theme_color": "#003b71",
+  "orientation": "portrait-primary"
+}
