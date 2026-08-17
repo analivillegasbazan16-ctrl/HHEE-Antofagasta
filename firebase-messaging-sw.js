@@ -1,100 +1,111 @@
 /* ============================================================
    HHEE ANTOFAGASTA
-   FIREBASE CLOUD MESSAGING - SERVICE WORKER
+   SERVICE WORKER - FIREBASE CLOUD MESSAGING
    ============================================================ */
 
 const APP_BASE = "/HHEE-Antofagasta/";
 
 
-/*
-  IMPORTANTE:
-  notificationclick queda definido ANTES de importar FCM.
-*/
+/* ============================================================
+   INSTALACION / ACTUALIZACION
+   ============================================================ */
 
-self.addEventListener(
-  "notificationclick",
-  event => {
+self.addEventListener("install", event => {
+  self.skipWaiting();
+});
 
-    event.notification.close();
-
-
-    const destino =
-      event.notification?.data?.url
-      ||
-      APP_BASE;
+self.addEventListener("activate", event => {
+  event.waitUntil(
+    self.clients.claim()
+  );
+});
 
 
-    const urlDestino =
-      new URL(
-        destino,
-        self.location.origin
-      ).href;
+/* ============================================================
+   CLICK EN LA NOTIFICACION
+
+   IMPORTANTE:
+   Este evento debe declararse ANTES de cargar Firebase.
+   ============================================================ */
+
+self.addEventListener("notificationclick", event => {
+
+  event.notification.close();
+
+  const destino =
+    event.notification &&
+    event.notification.data &&
+    event.notification.data.url
+      ? event.notification.data.url
+      : APP_BASE;
+
+  const urlDestino =
+    new URL(
+      destino,
+      self.location.origin
+    ).href;
 
 
-    event.waitUntil(
+  event.waitUntil(
 
-      clients
-        .matchAll({
-          type: "window",
-          includeUncontrolled: true
-        })
-        .then(
-          async ventanas => {
+    clients.matchAll({
+      type: "window",
+      includeUncontrolled: true
+    })
+    .then(async ventanas => {
 
-            for (
-              const ventana of ventanas
-            ) {
+      /*
+        Si la aplicación HHEE ya está abierta,
+        reutilizamos esa ventana.
+      */
 
-              if (
-                ventana.url.startsWith(
-                  self.location.origin
-                  +
-                  APP_BASE
-                )
-              ) {
+      for (const ventana of ventanas) {
 
-                try {
+        if (
+          ventana.url.startsWith(
+            self.location.origin + APP_BASE
+          )
+        ) {
 
-                  await ventana.navigate(
-                    urlDestino
-                  );
+          try {
 
-                }
-                catch (error) {
+            await ventana.navigate(
+              urlDestino
+            );
 
-                  console.warn(
-                    "[HHEE] No se pudo navegar la ventana:",
-                    error
-                  );
-                }
+          } catch (error) {
 
-
-                if (
-                  "focus" in ventana
-                ) {
-
-                  return ventana.focus();
-                }
-              }
-            }
-
-
-            if (
-              clients.openWindow
-            ) {
-
-              return clients.openWindow(
-                urlDestino
-              );
-            }
-
-
-            return null;
+            console.error(
+              "No fue posible navegar a la solicitud:",
+              error
+            );
           }
-        )
-    );
-  }
-);
+
+
+          if ("focus" in ventana) {
+            return ventana.focus();
+          }
+        }
+      }
+
+
+      /*
+        Si HHEE no está abierta,
+        se abre desde cero.
+      */
+
+      if (clients.openWindow) {
+
+        return clients.openWindow(
+          urlDestino
+        );
+      }
+
+
+      return null;
+    })
+  );
+});
 
 
 /* ============================================================
@@ -102,15 +113,15 @@ self.addEventListener(
    ============================================================ */
 
 importScripts(
-  "https://www.gstatic.com/firebasejs/12.16.0/firebase-app-compat.js"
+  "https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"
 );
 
 importScripts(
-  "https://www.gstatic.com/firebasejs/12.16.0/firebase-messaging-compat.js"
+  "https://www.gstatic.com/firebasejs/10.13.2/firebase-messaging-compat.js"
 );
 
 
-const firebaseConfig = {
+firebase.initializeApp({
 
   apiKey:
     "AIzaSyCtZny0My5plZKF3VIOFY0MgTdY8NN82ek",
@@ -132,12 +143,7 @@ const firebaseConfig = {
 
   measurementId:
     "G-9PD7MCBCRS"
-};
-
-
-firebase.initializeApp(
-  firebaseConfig
-);
+});
 
 
 const messaging =
@@ -145,92 +151,87 @@ const messaging =
 
 
 /* ============================================================
-   MENSAJES EN SEGUNDO PLANO
+   NOTIFICACIONES EN SEGUNDO PLANO
    ============================================================ */
 
-messaging.onBackgroundMessage(
-  payload => {
+messaging.onBackgroundMessage(payload => {
 
-    console.log(
-      "[HHEE] Mensaje recibido en segundo plano:",
-      payload
-    );
-
-
-    const data =
-      payload?.data
-      ||
-      {};
+  console.log(
+    "[HHEE] Notificación recibida:",
+    payload
+  );
 
 
-    const titulo =
-      data.title
-      ||
-      payload?.notification?.title
-      ||
-      "Gestión de Horas Extras";
+  const data =
+    payload && payload.data
+      ? payload.data
+      : {};
 
 
-    const cuerpo =
-      data.body
-      ||
-      payload?.notification?.body
-      ||
-      "Tienes una nueva notificación.";
+  const titulo =
+    data.title ||
+    "Gestión de Horas Extras";
 
 
-    const destino =
-      data.url
-      ||
-      APP_BASE;
+  const cuerpo =
+    data.body ||
+    "Tienes una nueva notificación.";
 
 
-    const opciones = {
-
-      body:
-        cuerpo,
-
-      tag:
-        data.tag
-        ||
-        "hhee-notificacion",
-
-      renotify:
-        true,
-
-      data: {
-
-        url:
-          destino,
-
-        solicitudId:
-          data.solicitudId
-          ||
-          "",
-
-        tipo:
-          data.tipo
-          ||
-          ""
-      }
-    };
+  const destino =
+    data.url ||
+    APP_BASE;
 
 
-    return self.registration
-      .showNotification(
-        titulo,
-        opciones
-      );
-  }
-);
+  const solicitudId =
+    data.solicitudId ||
+    "";
 
 
-self.addEventListener(
-  "activate",
-  event => {
+  const tipo =
+    data.tipo ||
+    "";
 
-    event.waitUntil(
-      clients.claim()
-    );
-  }
-);
+
+  const opciones = {
+
+    body:
+      cuerpo,
+
+    tag:
+      data.tag ||
+      (
+        solicitudId
+          ? "hhee-" + solicitudId
+          : "hhee-notificacion"
+      ),
+
+    /*
+      Solicita mantener la notificación visible
+      hasta que el usuario interactúe con ella.
+    */
+    requireInteraction:
+      true,
+
+    renotify:
+      true,
+
+    data: {
+
+      url:
+        destino,
+
+      solicitudId:
+        solicitudId,
+
+      tipo:
+        tipo
+    }
+  };
+
+
+  return self.registration.showNotification(
+    titulo,
+    opciones
+  );
+});
