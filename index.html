@@ -816,6 +816,9 @@
   let webPushSubscriptionActual =
     null;
 
+  let webPushPublicKeyCache =
+    "";
+
   let canalNotificaciones =
     "";
 
@@ -1359,6 +1362,9 @@
       pwa:
         esPwaInstalada(),
 
+      secureContext:
+        window.isSecureContext === true,
+
       serviceWorker:
         "serviceWorker" in navigator,
 
@@ -1382,16 +1388,16 @@
   function soportaWebPushEstandar() {
 
     /*
-      No exigimos que PushManager exista como constructor global.
-      En WebKit el administrador Push se obtiene de forma fiable
-      desde ServiceWorkerRegistration.pushManager y, en versiones
-      nuevas, también puede existir window.pushManager.
+      En iPhone no bloqueamos Web Push por la presencia del
+      constructor global Notification. La suscripción se obtiene
+      desde ServiceWorkerRegistration.pushManager. El permiso se
+      solicita al llamar subscribe() desde el botón del usuario.
     */
 
     return (
-      "serviceWorker" in navigator
+      window.isSecureContext === true
       &&
-      "Notification" in window
+      "serviceWorker" in navigator
       &&
       iosCompatibleConWebPush()
     );
@@ -1556,6 +1562,11 @@
 
   async function obtenerClavePublicaWebPush() {
 
+    if (webPushPublicKeyCache) {
+      return webPushPublicKeyCache;
+    }
+
+
     const respuesta =
       await fetch(
         `${WEB_PUSH_WORKER}/vapid-public-key`,
@@ -1593,9 +1604,13 @@
     }
 
 
-    return String(
-      datos.publicKey
-    );
+    webPushPublicKeyCache =
+      String(
+        datos.publicKey
+      );
+
+
+    return webPushPublicKeyCache;
   }
 
 
@@ -1813,52 +1828,26 @@
       );
 
 
-      return toast(
-        !iosCompatibleConWebPush()
-          ?
-            "Web Push requiere iOS 16.4 o posterior."
-          :
-            "Web Push no está disponible en esta instalación. Actualiza iOS y vuelve a instalar HHEE desde Safari.",
-        "error"
-      );
-    }
+      if (!iosCompatibleConWebPush()) {
+
+        return toast(
+          "Web Push requiere iOS 16.4 o posterior.",
+          "error"
+        );
+      }
 
 
-    if (
-      Notification.permission ===
-      "denied"
-    ) {
+      if (!diag.secureContext) {
 
-      actualizarEstadoNotificaciones();
-
-
-      return toast(
-        "Las notificaciones están bloqueadas para HHEE. Habilítalas en Configuración > Notificaciones.",
-        "error"
-      );
-    }
-
-
-    const permiso =
-      Notification.permission ===
-      "granted"
-        ?
-          "granted"
-        :
-          await Notification
-            .requestPermission();
-
-
-    if (
-      permiso !==
-      "granted"
-    ) {
-
-      actualizarEstadoNotificaciones();
+        return toast(
+          "HHEE debe abrirse mediante HTTPS para activar notificaciones.",
+          "error"
+        );
+      }
 
 
       return toast(
-        "No se otorgó permiso para mostrar notificaciones.",
+        "El Service Worker no está disponible en esta instalación de HHEE.",
         "error"
       );
     }
@@ -1882,6 +1871,11 @@
         const publicKey =
           await obtenerClavePublicaWebPush();
 
+
+        /*
+          En iOS el permiso se solicita desde subscribe().
+          No exigimos Notification.requestPermission() como paso previo.
+        */
 
         subscription =
           await pushManager
@@ -1918,14 +1912,67 @@
       );
 
 
-      toast(
-        err.code?.includes?.("permission")
-          ?
-            "Firestore rechazó guardar la suscripción del iPhone. Publica primero las reglas actualizadas."
-          :
-            "No fue posible activar las notificaciones en este iPhone.",
-        "error"
-      );
+      const nombre =
+        String(
+          err?.name
+          ||
+          ""
+        );
+
+
+      const mensaje =
+        String(
+          err?.message
+          ||
+          err
+          ||
+          ""
+        );
+
+
+      if (
+        nombre === "NotAllowedError"
+        ||
+        nombre === "SecurityError"
+      ) {
+
+        toast(
+          "iOS no otorgó permiso para las notificaciones. Revisa Configuración > Notificaciones > Gestión de Horas Extras.",
+          "error"
+        );
+
+      }
+      else if (
+        mensaje.includes(
+          "PUSH_MANAGER_NO_DISPONIBLE"
+        )
+      ) {
+
+        toast(
+          "PushManager no está disponible. Actualiza iOS y vuelve a agregar HHEE a la pantalla de inicio desde Safari.",
+          "error"
+        );
+
+      }
+      else if (
+        err?.code?.includes?.(
+          "permission"
+        )
+      ) {
+
+        toast(
+          "Firestore rechazó guardar la suscripción del iPhone.",
+          "error"
+        );
+
+      }
+      else {
+
+        toast(
+          "No fue posible activar las notificaciones en este iPhone.",
+          "error"
+        );
+      }
     }
     finally {
 
@@ -2043,44 +2090,18 @@
       }
 
 
-      if (!soportaWebPushEstandar()) {
+      if (!iosCompatibleConWebPush()) {
 
-        const diag =
-          diagnosticoWebPushIOS();
-
-
-        if (!iosCompatibleConWebPush()) {
-
-          const v =
-            diag.version;
+        const v =
+          versionIOSActual();
 
 
-          estado.textContent =
-            v
-              ?
-                `Este iPhone usa iOS ${v.major}.${v.minor}. Web Push requiere iOS 16.4 o posterior.`
-              :
-                "Web Push requiere iOS 16.4 o posterior.";
-
-        }
-        else if (!diag.serviceWorker) {
-
-          estado.textContent =
-            "Este iPhone no tiene Service Worker disponible para HHEE.";
-
-        }
-        else if (!diag.notification) {
-
-          estado.textContent =
-            "La API de notificaciones no está disponible. Actualiza iOS y vuelve a instalar HHEE desde Safari.";
-
-        }
-        else {
-
-          estado.textContent =
-            "Web Push todavía no está disponible en esta instalación. Vuelve a instalar HHEE desde Safari.";
-        }
-
+        estado.textContent =
+          v
+            ?
+              `Este iPhone usa iOS ${v.major}.${v.minor}. Web Push requiere iOS 16.4 o posterior.`
+            :
+              "Web Push requiere iOS 16.4 o posterior.";
 
         btn.textContent =
           "No disponible";
@@ -2091,28 +2112,24 @@
         btn.className =
           "btnNotif bloqueada";
 
-        console.log(
-          "[HHEE] Diagnóstico Web Push iOS:",
-          diag
-        );
-
         return;
       }
 
 
       if (
-        Notification.permission ===
-        "denied"
+        !window.isSecureContext
+        ||
+        !("serviceWorker" in navigator)
       ) {
 
         estado.textContent =
-          "Las notificaciones están bloqueadas para HHEE.";
+          "El Service Worker de HHEE no está disponible en este iPhone.";
 
         btn.textContent =
-          "Bloqueadas";
+          "No disponible";
 
         btn.disabled =
-          false;
+          true;
 
         btn.className =
           "btnNotif bloqueada";
@@ -2871,6 +2888,18 @@
 
     try {
 
+      /*
+        Precargamos Service Worker y VAPID antes de que el usuario
+        pulse el botón. Esto deja subscribe() preparado para ejecutarse
+        directamente desde la interacción del usuario.
+      */
+
+      await Promise.all([
+        prepararServiceWorker(),
+        obtenerClavePublicaWebPush()
+      ]);
+
+
       const {
         pushManager
       } =
@@ -2894,22 +2923,16 @@
           true;
 
 
-        if (
-          Notification.permission ===
-          "granted"
-        ) {
-
-          await guardarRegistroWebPush(
-            subscription
-          );
-        }
+        await guardarRegistroWebPush(
+          subscription
+        );
       }
 
     }
     catch (err) {
 
       console.warn(
-        "[HHEE] No se pudo sincronizar Web Push:",
+        "[HHEE] No se pudo preparar/sincronizar Web Push:",
         err
       );
     }
