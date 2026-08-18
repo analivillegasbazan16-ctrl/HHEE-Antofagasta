@@ -252,7 +252,7 @@
 
     @media(max-width:820px){
       html,body{background:#f3f7fa!important}
-      #pantallaLogin{display:block!important;min-height:100vh!important;background:#f3f7fa!important}
+      #pantallaLogin:not(.hidden){display:block;min-height:100vh;background:#f3f7fa}
       .loginMarca{
         min-height:515px!important;
         padding:54px 42px 82px!important;
@@ -1293,15 +1293,136 @@
   }
 
 
+  function versionIOSActual() {
+
+    if (!esIOS()) {
+      return null;
+    }
+
+
+    const ua =
+      navigator.userAgent
+      ||
+      "";
+
+
+    const match =
+      ua.match(
+        /OS\s(\d+)[._](\d+)(?:[._](\d+))?/i
+      );
+
+
+    if (!match) {
+      return null;
+    }
+
+
+    return {
+      major:
+        Number(match[1] || 0),
+
+      minor:
+        Number(match[2] || 0),
+
+      patch:
+        Number(match[3] || 0)
+    };
+  }
+
+
+  function iosCompatibleConWebPush() {
+
+    const version =
+      versionIOSActual();
+
+
+    if (!version) {
+      return true;
+    }
+
+
+    return (
+      version.major > 16
+      ||
+      (
+        version.major === 16
+        &&
+        version.minor >= 4
+      )
+    );
+  }
+
+
+  function diagnosticoWebPushIOS() {
+
+    return {
+      pwa:
+        esPwaInstalada(),
+
+      serviceWorker:
+        "serviceWorker" in navigator,
+
+      notification:
+        "Notification" in window,
+
+      pushManagerGlobal:
+        "PushManager" in window,
+
+      pushManagerVentana:
+        Boolean(
+          window.pushManager
+        ),
+
+      version:
+        versionIOSActual()
+    };
+  }
+
+
   function soportaWebPushEstandar() {
+
+    /*
+      No exigimos que PushManager exista como constructor global.
+      En WebKit el administrador Push se obtiene de forma fiable
+      desde ServiceWorkerRegistration.pushManager y, en versiones
+      nuevas, también puede existir window.pushManager.
+    */
 
     return (
       "serviceWorker" in navigator
       &&
-      "PushManager" in window
-      &&
       "Notification" in window
+      &&
+      iosCompatibleConWebPush()
     );
+  }
+
+
+  async function obtenerPushManagerWeb() {
+
+    const registro =
+      await prepararServiceWorker();
+
+
+    const pushManager =
+      registro?.pushManager
+      ||
+      window.pushManager
+      ||
+      null;
+
+
+    if (!pushManager) {
+      throw new Error(
+        "PUSH_MANAGER_NO_DISPONIBLE"
+      );
+    }
+
+
+    return {
+      registro,
+      pushManager
+    };
   }
 
 
@@ -1682,8 +1803,22 @@
 
     if (!soportaWebPushEstandar()) {
 
+      const diag =
+        diagnosticoWebPushIOS();
+
+
+      console.log(
+        "[HHEE] Diagnóstico Web Push iOS:",
+        diag
+      );
+
+
       return toast(
-        "Este iPhone no tiene Web Push disponible. Revisa la versión de iOS y que HHEE esté instalada en la pantalla de inicio.",
+        !iosCompatibleConWebPush()
+          ?
+            "Web Push requiere iOS 16.4 o posterior."
+          :
+            "Web Push no está disponible en esta instalación. Actualiza iOS y vuelve a instalar HHEE desde Safari.",
         "error"
       );
     }
@@ -1731,13 +1866,14 @@
 
     try {
 
-      const registro =
-        await prepararServiceWorker();
+      const {
+        pushManager
+      } =
+        await obtenerPushManagerWeb();
 
 
       let subscription =
-        await registro
-          .pushManager
+        await pushManager
           .getSubscription();
 
 
@@ -1748,8 +1884,7 @@
 
 
         subscription =
-          await registro
-            .pushManager
+          await pushManager
             .subscribe(
               {
                 userVisibleOnly:
@@ -1812,15 +1947,16 @@
 
     try {
 
-      const registro =
-        await prepararServiceWorker();
+      const {
+        pushManager
+      } =
+        await obtenerPushManagerWeb();
 
 
       const subscription =
         webPushSubscriptionActual
         ||
-        await registro
-          .pushManager
+        await pushManager
           .getSubscription();
 
 
@@ -1909,8 +2045,42 @@
 
       if (!soportaWebPushEstandar()) {
 
-        estado.textContent =
-          "Web Push no está disponible en este iPhone.";
+        const diag =
+          diagnosticoWebPushIOS();
+
+
+        if (!iosCompatibleConWebPush()) {
+
+          const v =
+            diag.version;
+
+
+          estado.textContent =
+            v
+              ?
+                `Este iPhone usa iOS ${v.major}.${v.minor}. Web Push requiere iOS 16.4 o posterior.`
+              :
+                "Web Push requiere iOS 16.4 o posterior.";
+
+        }
+        else if (!diag.serviceWorker) {
+
+          estado.textContent =
+            "Este iPhone no tiene Service Worker disponible para HHEE.";
+
+        }
+        else if (!diag.notification) {
+
+          estado.textContent =
+            "La API de notificaciones no está disponible. Actualiza iOS y vuelve a instalar HHEE desde Safari.";
+
+        }
+        else {
+
+          estado.textContent =
+            "Web Push todavía no está disponible en esta instalación. Vuelve a instalar HHEE desde Safari.";
+        }
+
 
         btn.textContent =
           "No disponible";
@@ -1920,6 +2090,11 @@
 
         btn.className =
           "btnNotif bloqueada";
+
+        console.log(
+          "[HHEE] Diagnóstico Web Push iOS:",
+          diag
+        );
 
         return;
       }
@@ -2696,13 +2871,14 @@
 
     try {
 
-      const registro =
-        await prepararServiceWorker();
+      const {
+        pushManager
+      } =
+        await obtenerPushManagerWeb();
 
 
       const subscription =
-        await registro
-          .pushManager
+        await pushManager
           .getSubscription();
 
 
@@ -2890,15 +3066,16 @@
 
           try {
 
-            const registro =
-              await prepararServiceWorker();
+            const {
+              pushManager
+            } =
+              await obtenerPushManagerWeb();
 
 
             const subscription =
               webPushSubscriptionActual
               ||
-              await registro
-                .pushManager
+              await pushManager
                 .getSubscription();
 
 
