@@ -187,7 +187,7 @@
     .bTrab{background:var(--verdeF);color:var(--verde)}
     .bSup{background:var(--azulClaro);color:var(--azul2)}
     .bAdm{background:var(--moradoF);color:var(--morado)}
-    .perfilDatos{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-top:18px}
+    .perfilDatos{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-top:18px}
     .perfilDato{padding:12px 13px;border:1px solid var(--borde);border-radius:10px;background:rgba(255,255,255,.82)}
     .perfilDato span{display:block;color:var(--gris);font-size:10px;font-weight:800;text-transform:uppercase;margin-bottom:4px}
 
@@ -202,7 +202,145 @@
     .modulo p{margin:0;color:var(--gris);font-size:13px;line-height:1.45}
     .flecha{margin-left:auto;color:#93a6b5;font-size:23px}
 
-    #panelModulo{margin-top:28px;padding:24px}
+    /* ====================== NAVEGACIÓN ADMINISTRACIÓN ====================== */
+
+    .adminTabs{
+      position:sticky;
+      top:84px;
+      z-index:90;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      margin-top:20px;
+      padding:10px;
+      overflow-x:auto;
+      border:1px solid var(--borde);
+      border-radius:14px;
+      background:rgba(255,255,255,.97);
+      box-shadow:0 7px 22px rgba(0,59,113,.06);
+      scrollbar-width:thin;
+    }
+
+    .adminTab{
+      flex:0 0 auto;
+      border:1px solid transparent;
+      border-radius:10px;
+      padding:10px 13px;
+      background:transparent;
+      color:#52657a;
+      font-size:12px;
+      font-weight:800;
+      white-space:nowrap;
+    }
+
+    .adminTab:hover{
+      background:var(--azulClaro);
+      color:var(--azul);
+    }
+
+    .adminTab.activa{
+      background:var(--azul);
+      color:#fff;
+      box-shadow:0 4px 12px rgba(0,59,113,.18);
+    }
+
+    .adminModuloActivo #seccionTrabajador,
+    .adminModuloActivo #seccionSupervisor,
+    .adminModuloActivo #seccionAdministrador{
+      display:none!important;
+    }
+
+    .adminModuloActivo #introAdmin{
+      display:none!important;
+    }
+
+    .adminIntro{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:15px;
+      margin-top:18px;
+      padding:15px 17px;
+      border:1px solid #cfe0eb;
+      border-radius:12px;
+      background:linear-gradient(135deg,#fff,#f3f9fd);
+    }
+
+    .adminIntro strong{display:block;color:var(--azul);font-size:14px}
+    .adminIntro span{display:block;color:var(--gris);font-size:12px;margin-top:3px}
+
+    .filtrosRango{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+    .periodoGrupo{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+    .tablaResumenTrabajador{min-width:1080px}
+    .nombrePrincipal{font-weight:800;color:var(--azul)}
+    .subDato{display:block;margin-top:2px;color:var(--gris);font-size:10px}
+
+    .estadoRevision{background:var(--naranjoF);color:var(--naranjo)}
+    .estadoSinSap{background:#fdecef;color:#a82332}
+
+    .concCabecera{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:15px;
+      margin-bottom:14px;
+    }
+
+    .concCabecera h3{margin:0 0 5px;color:var(--azul)}
+    .concCabecera p{margin:0;color:var(--gris);font-size:12px;line-height:1.45}
+
+    details.configAvanzada{
+      margin-top:14px;
+      border:1px solid var(--borde);
+      border-radius:11px;
+      background:#fff;
+    }
+
+    details.configAvanzada summary{
+      cursor:pointer;
+      padding:12px 14px;
+      color:var(--azul);
+      font-size:12px;
+      font-weight:800;
+    }
+
+    details.configAvanzada .configContenido{padding:0 14px 14px}
+
+    .notaReglaPago{
+      margin:12px 0;
+      padding:12px 14px;
+      border-left:4px solid var(--naranjo);
+      border-radius:8px;
+      background:var(--naranjoF);
+      color:#6d4b05;
+      font-size:12px;
+      line-height:1.5;
+    }
+
+    .bonificacionPago{
+      display:inline-flex;
+      align-items:center;
+      gap:5px;
+      margin-top:4px;
+      padding:3px 7px;
+      border-radius:999px;
+      background:var(--azulClaro);
+      color:var(--azul);
+      font-size:10px;
+      font-weight:800;
+      white-space:nowrap;
+    }
+
+    .detallePagoLinea{
+      display:block;
+      margin-top:3px;
+      color:var(--gris);
+      font-size:10px;
+      line-height:1.35;
+    }
+
+    #panelModulo{margin-top:18px;padding:24px}
     .panelHead{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:20px}
     .panelHead h2{margin:0 0 5px;color:var(--azul)}
     .panelHead p{margin:0;color:var(--gris)}
@@ -296,10 +434,13 @@
       .btnNotif{width:100%}
       .cabecera{padding:11px 14px}
       .contenedor{width:calc(100% - 22px);margin-top:17px}
-      .perfilDatos,.gridModulos,.grid2,.grid3,.grid4{grid-template-columns:1fr}
+      .perfilDatos,.gridModulos,.grid2,.grid3,.grid4,.filtrosRango{grid-template-columns:1fr}
       .resumenKpi{grid-template-columns:repeat(2,1fr)}
       .acciones{flex-direction:column-reverse}
       .acciones .btn{width:100%}
+      .adminTabs{top:72px;margin-left:-2px;margin-right:-2px}
+      .periodoGrupo{grid-template-columns:1fr 1fr}
+      .adminIntro{align-items:flex-start;flex-direction:column}
     }
   </style>
 </head>
@@ -463,6 +604,11 @@
           </div>
 
           <div class="perfilDato">
+            <span>N° de personal</span>
+            <strong id="perfilNumeroPersonal">-</strong>
+          </div>
+
+          <div class="perfilDato">
             <span>Área</span>
             <strong id="perfilArea">-</strong>
           </div>
@@ -475,6 +621,24 @@
         </div>
 
       </section>
+
+      <nav id="barraAdminTabs" class="adminTabs hidden" aria-label="Módulos de Administración">
+
+        <button class="adminTab" type="button" data-modulo="resumenAdmin">Resumen</button>
+        <button class="adminTab" type="button" data-modulo="todasSolicitudes">Solicitudes</button>
+        <button class="adminTab" type="button" data-modulo="horasPagar">Horas a pagar</button>
+        <button class="adminTab" type="button" data-modulo="conciliacion">Conciliación SAP</button>
+        <button class="adminTab" type="button" data-modulo="exportar">Exportar</button>
+        <button class="adminTab" type="button" data-modulo="usuarios">Usuarios</button>
+
+      </nav>
+
+      <div id="introAdmin" class="adminIntro hidden">
+        <div>
+          <strong>Panel de Administración</strong>
+          <span>Selecciona una pestaña. Solo se mostrará el módulo elegido, sin tener que bajar por toda la página.</span>
+        </div>
+      </div>
 
 
       <section id="seccionTrabajador" class="seccion hidden">
@@ -592,83 +756,7 @@
       <section id="seccionAdministrador" class="seccion hidden">
 
         <h2>Administración</h2>
-
-        <p>
-          Vista general, respaldo, usuarios y conciliación con SAP.
-        </p>
-
-        <div class="gridModulos">
-
-          <button class="modulo" data-modulo="todasSolicitudes">
-
-            <div class="modIcon">📑</div>
-
-            <div>
-              <h3>Todas las solicitudes</h3>
-              <p>Revisión general de todas las áreas y estados.</p>
-            </div>
-
-            <div class="flecha">›</div>
-
-          </button>
-
-
-          <button class="modulo" data-modulo="usuarios">
-
-            <div class="modIcon">👥</div>
-
-            <div>
-              <h3>Usuarios</h3>
-              <p>Editar perfiles, permisos y supervisor asignado.</p>
-            </div>
-
-            <div class="flecha">›</div>
-
-          </button>
-
-
-          <button class="modulo" data-modulo="exportar">
-
-            <div class="modIcon">📥</div>
-
-            <div>
-              <h3>Exportar solicitudes</h3>
-              <p>Descargar respaldo mensual en Excel.</p>
-            </div>
-
-            <div class="flecha">›</div>
-
-          </button>
-
-
-          <button class="modulo" data-modulo="conciliacion">
-
-            <div class="modIcon">🔎</div>
-
-            <div>
-              <h3>Conciliación SAP</h3>
-              <p>Subir Excel SAP y comparar trabajador, fecha y recargo.</p>
-            </div>
-
-            <div class="flecha">›</div>
-
-          </button>
-
-
-          <button class="modulo" data-modulo="informePdf">
-
-            <div class="modIcon">📄</div>
-
-            <div>
-              <h3>Informe PDF</h3>
-              <p>Generar el informe final de conciliación.</p>
-            </div>
-
-            <div class="flecha">›</div>
-
-          </button>
-
-        </div>
+        <p>Usa las pestañas superiores para cambiar de módulo.</p>
 
       </section>
 
@@ -844,6 +932,7 @@
 
   let sapFilas = [];
   let sapCabeceras = [];
+  let sapArchivoNombre = "";
 
   let ultimaConciliacion =
     null;
@@ -941,6 +1030,30 @@
   }
 
 
+  function normalizarNumeroPersonal(v) {
+
+    return String(v ?? "")
+      .trim()
+      .replace(/\s+/g, "");
+  }
+
+
+  function claveNumeroPersonal(v) {
+
+    const texto =
+      normalizarNumeroPersonal(v);
+
+
+    if (/^\d+$/.test(texto)) {
+
+      return texto.replace(/^0+(?=\d)/, "");
+    }
+
+
+    return texto.toUpperCase();
+  }
+
+
   function normalizarCorreo(v) {
 
     return String(v ?? "")
@@ -1018,6 +1131,21 @@
   }
 
 
+  function recargoSapNumero(v) {
+
+    const n =
+      Math.round(numero(v));
+
+
+    if (n === 1214) return 50;
+    if (n === 1215) return 75;
+    if (n === 1216) return 100;
+
+
+    return recargoNumero(v);
+  }
+
+
   function red2(n) {
 
     return Math.round(
@@ -1053,6 +1181,86 @@
       /
       60
     );
+  }
+
+
+  /*
+    =========================================================
+    HORAS PAGABLES - REGLA DE MÍNIMO
+    =========================================================
+
+    Regla aplicada en Administración y Conciliación SAP:
+    - Se conservan siempre las horas reales aprobadas.
+    - El cálculo se agrupa por trabajador + fecha + recargo.
+    - Si el total aprobado de ese grupo es mayor que 0 y menor
+      que 3,00 h, se completa hasta 3,00 h.
+    - La diferencia se informa por separado como BONIFICACIÓN.
+    - La bonificación mantiene el mismo recargo del grupo.
+
+    Ejemplo:
+      1,00 h real al 50% + 2,00 h bonificación al 50%
+      = 3,00 h a pagar al 50%.
+  */
+
+  const REGLA_PAGO_CONFIGURADA = true;
+  const HORAS_MINIMAS_PAGO = 3;
+
+
+  function detallePagoDesdeHoras(horasAprobadas) {
+
+    const registradas =
+      red2(
+        Math.max(
+          0,
+          numero(horasAprobadas)
+        )
+      );
+
+
+    const pagar =
+      registradas > 0
+      &&
+      registradas < HORAS_MINIMAS_PAGO
+        ? HORAS_MINIMAS_PAGO
+        : registradas;
+
+
+    const bonificacion =
+      red2(
+        Math.max(
+          0,
+          pagar - registradas
+        )
+      );
+
+
+    return {
+      registradas,
+      bonificacion,
+      pagar: red2(pagar)
+    };
+  }
+
+
+  function horasPagablesDesdeHoras(horasAprobadas) {
+
+    return detallePagoDesdeHoras(
+      horasAprobadas
+    ).pagar;
+  }
+
+
+  function bonificacionDesdeHoras(horasAprobadas) {
+
+    return detallePagoDesdeHoras(
+      horasAprobadas
+    ).bonificacion;
+  }
+
+
+  function textoEstadoReglaPago() {
+
+    return `Mínimo ${vistaHoras(HORAS_MINIMAS_PAGO)} h por trabajador, fecha y recargo. Si las horas aprobadas son menores, la diferencia se agrega como bonificación al mismo recargo.`;
   }
 
 
@@ -3490,6 +3698,13 @@
         "-";
 
 
+    $("perfilNumeroPersonal")
+      .textContent =
+        p.NumeroPersonal
+        ||
+        "-";
+
+
     $("perfilArea")
       .textContent =
         p.Area
@@ -3541,6 +3756,21 @@
 
 
     $("seccionAdministrador")
+      .classList
+      .add(
+        "hidden"
+      );
+
+
+    $("barraAdminTabs")
+      .classList
+      .toggle(
+        "hidden",
+        !esAdmin()
+      );
+
+
+    $("introAdmin")
       .classList
       .toggle(
         "hidden",
@@ -3984,6 +4214,13 @@
           pre.Rut
           ||
           "",
+
+        NumeroPersonal:
+          normalizarNumeroPersonal(
+            pre.NumeroPersonal
+            ||
+            ""
+          ),
 
         Area:
           pre.Area
@@ -5024,6 +5261,14 @@
             </div>
 
             <div>
+              <label>N° de personal</label>
+              <input
+                value="${esc(perfilActual.NumeroPersonal || "")}"
+                readonly
+              >
+            </div>
+
+            <div>
               <label>Área</label>
               <input
                 value="${esc(perfilActual.Area || "")}"
@@ -5685,6 +5930,13 @@
           ||
           "",
 
+        NumeroPersonal:
+          normalizarNumeroPersonal(
+            perfilActual.NumeroPersonal
+            ||
+            ""
+          ),
+
         Area:
           perfilActual.Area
           ||
@@ -6200,7 +6452,7 @@
                         ${esc(nombreCompleto(s))}
                         <br>
                         <small>
-                          ${esc(s.Rut || "")}
+                          ${esc(s.NumeroPersonal ? `N° ${s.NumeroPersonal} · ` : "")}${esc(s.Rut || "")}
                         </small>
                       </td>
 
@@ -6414,6 +6666,12 @@
               <b>RUT</b>
               <br>
               ${esc(s.Rut || "")}
+            </div>
+
+            <div>
+              <b>N° de personal</b>
+              <br>
+              ${esc(s.NumeroPersonal || "-")}
             </div>
 
             <div>
@@ -7328,6 +7586,687 @@
 
 
   /* =========================================================
+     ADMIN - RESUMEN
+  ========================================================= */
+
+  async function renderResumenAdmin() {
+
+    const arr =
+      await cargarTodasSolicitudes();
+
+
+    const pendientes =
+      arr.filter(
+        x =>
+          normEstado(x.estado) === "pendiente"
+      );
+
+
+    const aprobadas =
+      arr.filter(
+        x =>
+          normEstado(x.estado) === "aprobada"
+      );
+
+
+    const rechazadas =
+      arr.filter(
+        x =>
+          normEstado(x.estado) === "rechazada"
+      );
+
+
+    const horasAprobadas =
+      aprobadas.reduce(
+        (suma, x) =>
+          suma + numero(x.horasTotales),
+        0
+      );
+
+
+    const ultimas =
+      arr
+        .slice(0, 10);
+
+
+    $("contenidoModulo")
+      .innerHTML =
+        `
+          <div class="resumenKpi">
+
+            <div class="kpi">
+              <span>Pendientes</span>
+              <strong>${pendientes.length}</strong>
+            </div>
+
+            <div class="kpi">
+              <span>Aprobadas</span>
+              <strong>${aprobadas.length}</strong>
+            </div>
+
+            <div class="kpi">
+              <span>Rechazadas</span>
+              <strong>${rechazadas.length}</strong>
+            </div>
+
+            <div class="kpi">
+              <span>Horas aprobadas</span>
+              <strong>${vistaHoras(horasAprobadas)} h</strong>
+            </div>
+
+          </div>
+
+
+          <div class="bloque">
+
+            <h3>Últimas solicitudes</h3>
+
+            ${tablaSolicitudes(ultimas, "admin")}
+
+          </div>
+        `;
+  }
+
+
+  /* =========================================================
+     ADMIN - HORAS A PAGAR
+  ========================================================= */
+
+  function numeroPersonalDeSolicitud(s) {
+
+    const directo =
+      normalizarNumeroPersonal(
+        s?.NumeroPersonal
+        ||
+        ""
+      );
+
+
+    if (directo) {
+      return directo;
+    }
+
+
+    const usuario =
+      s?.trabajadorUid
+        ?
+          cacheUsuarios.get(
+            s.trabajadorUid
+          )
+        :
+          null;
+
+
+    return normalizarNumeroPersonal(
+      usuario?.NumeroPersonal
+      ||
+      ""
+    );
+  }
+
+
+  function filasAprobadasPorFechaRecargo(
+    solicitudes,
+    rango
+  ) {
+
+    const mapa =
+      new Map();
+
+
+    solicitudes.forEach(
+      s => {
+
+        if (
+          normEstado(s.estado) !==
+          "aprobada"
+        ) {
+          return;
+        }
+
+
+        const numeroPersonal =
+          numeroPersonalDeSolicitud(s);
+
+
+        const idInterno =
+          numeroPersonal
+          ||
+          s.trabajadorUid
+          ||
+          normalizarRut(s.Rut)
+          ||
+          normalizarTexto(nombreCompleto(s));
+
+
+        (s.tramosCalculados || [])
+          .forEach(
+            t => {
+
+              const fecha =
+                String(t.fecha || "");
+
+
+              if (
+                fecha < rango.ini
+                ||
+                fecha >= rango.fin
+              ) {
+                return;
+              }
+
+
+              const recargo =
+                recargoNumero(t.recargo);
+
+
+              if (
+                ![50, 75, 100].includes(recargo)
+              ) {
+                return;
+              }
+
+
+              const clave =
+                `${idInterno}|${fecha}|${recargo}`;
+
+
+              if (!mapa.has(clave)) {
+
+                mapa.set(
+                  clave,
+                  {
+                    clave,
+                    idInterno,
+                    trabajadorUid: s.trabajadorUid || "",
+                    numeroPersonal,
+                    nombre: nombreCompleto(s) || "Trabajador",
+                    area: s.Area || "",
+                    rut: s.Rut || "",
+                    fecha,
+                    recargo,
+                    horasRegistradas: 0,
+                    bonificacion: 0,
+                    horasPagar: 0,
+                    solicitudes: new Set()
+                  }
+                );
+              }
+
+
+              const fila =
+                mapa.get(clave);
+
+
+              fila.horasRegistradas +=
+                numero(t.horas);
+
+
+              if (s.id) {
+                fila.solicitudes.add(s.id);
+              }
+            }
+          );
+      }
+    );
+
+
+    return [...mapa.values()]
+      .map(
+        fila => {
+
+          const pago =
+            detallePagoDesdeHoras(
+              fila.horasRegistradas
+            );
+
+
+          return {
+            ...fila,
+            horasRegistradas: pago.registradas,
+            bonificacion: pago.bonificacion,
+            horasPagar: pago.pagar,
+            solicitudes: [...fila.solicitudes]
+          };
+        }
+      )
+      .sort(
+        (a, b) =>
+          a.nombre.localeCompare(b.nombre, "es")
+          ||
+          a.fecha.localeCompare(b.fecha)
+          ||
+          a.recargo - b.recargo
+      );
+  }
+
+
+  function resumenTrabajadoresPago(filas) {
+
+    const mapa =
+      new Map();
+
+
+    filas.forEach(
+      f => {
+
+        const clave = f.idInterno;
+
+
+        if (!mapa.has(clave)) {
+
+          mapa.set(
+            clave,
+            {
+              idInterno: clave,
+              numeroPersonal: f.numeroPersonal || "",
+              nombre: f.nombre,
+              area: f.area,
+              horasRegistradas: 0,
+              bonificacion: 0,
+              h50: 0,
+              h75: 0,
+              h100: 0,
+              totalPagar: 0
+            }
+          );
+        }
+
+
+        const x = mapa.get(clave);
+
+        x.horasRegistradas += f.horasRegistradas;
+        x.bonificacion += f.bonificacion;
+        x.totalPagar += f.horasPagar;
+
+
+        if (f.recargo === 50) x.h50 += f.horasPagar;
+        if (f.recargo === 75) x.h75 += f.horasPagar;
+        if (f.recargo === 100) x.h100 += f.horasPagar;
+      }
+    );
+
+
+    return [...mapa.values()]
+      .map(
+        x => ({
+          ...x,
+          horasRegistradas: red2(x.horasRegistradas),
+          bonificacion: red2(x.bonificacion),
+          h50: red2(x.h50),
+          h75: red2(x.h75),
+          h100: red2(x.h100),
+          totalPagar: red2(x.totalPagar)
+        })
+      )
+      .sort(
+        (a, b) =>
+          a.nombre.localeCompare(b.nombre, "es")
+      );
+  }
+
+
+  async function renderHorasPagar() {
+
+    await cargarUsuarios();
+
+
+    const hoy = new Date();
+
+
+    $("contenidoModulo").innerHTML =
+      `
+        <div class="bloque">
+
+          <h3>Horas a pagar</h3>
+
+          <div class="mensaje mensajeInfo">
+            Solo se consideran solicitudes <b>aprobadas por el supervisor</b>.
+            El cálculo se separa automáticamente por trabajador, fecha y recargo.
+          </div>
+
+          <div class="notaReglaPago">
+            <b>Regla de horas mínimas a pagar:</b> ${esc(textoEstadoReglaPago())}
+            <br>
+            <b>Ejemplo:</b> 1,00 h real al 50% + 2,00 h de bonificación al 50% = 3,00 h a pagar al 50%.
+          </div>
+
+          <div class="filtrosRango">
+
+            <div>
+              <label>Período desde</label>
+              <div class="periodoGrupo">
+                <select id="pagDesdeMes">${opcionesMeses(hoy.getMonth() + 1)}</select>
+                <select id="pagDesdeAnio">${opcionesAnios(hoy.getFullYear())}</select>
+              </div>
+            </div>
+
+            <div>
+              <label>Período hasta</label>
+              <div class="periodoGrupo">
+                <select id="pagHastaMes">${opcionesMeses(hoy.getMonth() + 1)}</select>
+                <select id="pagHastaAnio">${opcionesAnios(hoy.getFullYear())}</select>
+              </div>
+            </div>
+
+            <div>
+              <label>Buscar trabajador</label>
+              <input id="pagBuscar" placeholder="Nombre o N° personal">
+            </div>
+
+            <div>
+              <label>Área</label>
+              <input id="pagArea" placeholder="Todas">
+            </div>
+
+          </div>
+
+          <div class="acciones">
+            <button class="btn btnPrimario" id="btnPagCargar">Cargar</button>
+            <button class="btn btnSecundario" id="btnPagExcel" disabled>Descargar Excel</button>
+          </div>
+
+        </div>
+
+        <div id="pagResultado"></div>
+      `;
+
+
+    let filasBase = [];
+    let rangoActual = null;
+
+
+    const filtradas =
+      () => {
+
+        const buscar =
+          normalizarTexto(
+            $("pagBuscar").value
+          );
+
+
+        const area =
+          normalizarTexto(
+            $("pagArea").value
+          );
+
+
+        return filasBase.filter(
+          f =>
+            (
+              !buscar
+              ||
+              normalizarTexto(f.nombre).includes(buscar)
+              ||
+              normalizarTexto(f.numeroPersonal).includes(buscar)
+            )
+            &&
+            (
+              !area
+              ||
+              normalizarTexto(f.area) === area
+            )
+        );
+      };
+
+
+    function pintar() {
+
+      const filas = filtradas();
+      const resumen = resumenTrabajadoresPago(filas);
+
+
+      const total50 = resumen.reduce((a, x) => a + x.h50, 0);
+      const total75 = resumen.reduce((a, x) => a + x.h75, 0);
+      const total100 = resumen.reduce((a, x) => a + x.h100, 0);
+      const totalBonificacion = resumen.reduce((a, x) => a + x.bonificacion, 0);
+      const total = resumen.reduce((a, x) => a + x.totalPagar, 0);
+
+
+      $("btnPagExcel").disabled =
+        !filas.length;
+
+
+      $("pagResultado").innerHTML =
+        `
+          ${
+            rangoActual
+              ? `<div class="mensaje mensajeInfo"><b>Período:</b> ${esc(etiquetaRangoPeriodo(rangoActual))}</div>`
+              : ""
+          }
+
+          <div class="resumenKpi">
+            <div class="kpi"><span>50% a pagar</span><strong>${vistaHoras(total50)} h</strong></div>
+            <div class="kpi"><span>75% a pagar</span><strong>${vistaHoras(total75)} h</strong></div>
+            <div class="kpi"><span>100% a pagar</span><strong>${vistaHoras(total100)} h</strong></div>
+            <div class="kpi"><span>Bonificación mínima</span><strong>${vistaHoras(totalBonificacion)} h</strong></div>
+            <div class="kpi"><span>Total a pagar</span><strong>${vistaHoras(total)} h</strong></div>
+          </div>
+
+          <div class="bloque">
+            <h3>Resumen por trabajador</h3>
+
+            ${
+              resumen.length
+                ?
+                  `
+                    <div class="tablaWrap">
+                      <table class="tabla tablaResumenTrabajador">
+                        <thead>
+                          <tr>
+                            <th>N° personal</th>
+                            <th>Trabajador</th>
+                            <th>Área</th>
+                            <th>Registradas</th>
+                            <th>Bonificación</th>
+                            <th>50%</th>
+                            <th>75%</th>
+                            <th>100%</th>
+                            <th>Total a pagar</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          ${
+                            resumen.map(
+                              x =>
+                                `
+                                  <tr>
+                                    <td>${esc(x.numeroPersonal || "Sin N°")}</td>
+                                    <td class="nombrePrincipal">${esc(x.nombre)}</td>
+                                    <td>${esc(x.area || "-")}</td>
+                                    <td>${vistaHoras(x.horasRegistradas)} h</td>
+                                    <td>${vistaHoras(x.bonificacion)} h</td>
+                                    <td>${vistaHoras(x.h50)} h</td>
+                                    <td>${vistaHoras(x.h75)} h</td>
+                                    <td>${vistaHoras(x.h100)} h</td>
+                                    <td><b>${vistaHoras(x.totalPagar)} h</b></td>
+                                  </tr>
+                                `
+                            ).join("")
+                          }
+                        </tbody>
+                      </table>
+                    </div>
+                  `
+                :
+                  `<div class="mensaje mensajeInfo">No hay horas aprobadas para mostrar.</div>`
+            }
+          </div>
+
+          <div class="bloque">
+            <h3>Detalle por fecha y recargo</h3>
+
+            ${
+              filas.length
+                ?
+                  `
+                    <div class="tablaWrap">
+                      <table class="tabla">
+                        <thead>
+                          <tr>
+                            <th>N° personal</th>
+                            <th>Trabajador</th>
+                            <th>Fecha</th>
+                            <th>Recargo</th>
+                            <th>Horas registradas</th>
+                            <th>Bonificación por mínimo</th>
+                            <th>Horas a pagar</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          ${
+                            filas.map(
+                              f =>
+                                `
+                                  <tr>
+                                    <td>${esc(f.numeroPersonal || "Sin N°")}</td>
+                                    <td>${esc(f.nombre)}</td>
+                                    <td>${fechaCL(f.fecha)}</td>
+                                    <td>${f.recargo}%</td>
+                                    <td>${vistaHoras(f.horasRegistradas)} h</td>
+                                    <td>
+                                      ${vistaHoras(f.bonificacion)} h
+                                      ${
+                                        f.bonificacion > 0
+                                          ? `<span class="bonificacionPago">Bonificación al ${f.recargo}%</span>`
+                                          : `<span class="detallePagoLinea">No aplica mínimo adicional</span>`
+                                      }
+                                    </td>
+                                    <td>
+                                      <b>${vistaHoras(f.horasPagar)} h</b>
+                                      ${
+                                        f.bonificacion > 0
+                                          ? `<span class="detallePagoLinea">${vistaHoras(f.horasRegistradas)} h reales + ${vistaHoras(f.bonificacion)} h bonificación</span>`
+                                          : ""
+                                      }
+                                    </td>
+                                  </tr>
+                                `
+                            ).join("")
+                          }
+                        </tbody>
+                      </table>
+                    </div>
+                  `
+                :
+                  `<div class="mensaje mensajeInfo">Sin detalle.</div>`
+            }
+          </div>
+        `;
+    }
+
+
+    $("btnPagCargar")
+      .addEventListener(
+        "click",
+        async () => {
+
+          try {
+
+            rangoActual =
+              rangoPeriodos(
+                Number($("pagDesdeAnio").value),
+                Number($("pagDesdeMes").value),
+                Number($("pagHastaAnio").value),
+                Number($("pagHastaMes").value)
+              );
+
+
+            const solicitudes =
+              await solicitudesRango(
+                rangoActual.yDesde,
+                rangoActual.mDesde,
+                rangoActual.yHasta,
+                rangoActual.mHasta,
+                true
+              );
+
+
+            filasBase =
+              filasAprobadasPorFechaRecargo(
+                solicitudes,
+                rangoActual
+              );
+
+
+            pintar();
+
+          }
+          catch (err) {
+
+            console.error(err);
+            toast(err.message || "No fue posible calcular las horas a pagar.", "error");
+          }
+        }
+      );
+
+
+    $("pagBuscar").addEventListener("input", pintar);
+    $("pagArea").addEventListener("input", pintar);
+
+
+    $("btnPagExcel")
+      .addEventListener(
+        "click",
+        () => {
+
+          const filas = filtradas();
+
+
+          if (!filas.length || !rangoActual) return;
+
+
+          const resumen =
+            resumenTrabajadoresPago(filas)
+              .map(
+                x => ({
+                  "N° de personal": x.numeroPersonal,
+                  "Trabajador": x.nombre,
+                  "Área": x.area,
+                  "Horas registradas": x.horasRegistradas,
+                  "Bonificación por mínimo": x.bonificacion,
+                  "Horas 50% a pagar": x.h50,
+                  "Horas 75% a pagar": x.h75,
+                  "Horas 100% a pagar": x.h100,
+                  "Total horas a pagar": x.totalPagar
+                })
+              );
+
+
+          const detalle =
+            filas.map(
+              f => ({
+                "N° de personal": f.numeroPersonal,
+                "Trabajador": f.nombre,
+                "Área": f.area,
+                "Fecha": fechaCL(f.fecha),
+                "Recargo": `${f.recargo}%`,
+                "Horas registradas": f.horasRegistradas,
+                "Bonificación por mínimo": f.bonificacion,
+                "Horas a pagar": f.horasPagar,
+                "Explicación pago": f.bonificacion > 0
+                  ? `${vistaHoras(f.horasRegistradas)} h reales + ${vistaHoras(f.bonificacion)} h bonificación al ${f.recargo}% = ${vistaHoras(f.horasPagar)} h a pagar`
+                  : `${vistaHoras(f.horasRegistradas)} h reales = ${vistaHoras(f.horasPagar)} h a pagar`
+              })
+            );
+
+
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(resumen), "Resumen pago");
+          XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(detalle), "Detalle pago");
+
+
+          XLSX.writeFile(
+            wb,
+            `Horas_a_pagar_${rangoActual.yDesde}-${String(rangoActual.mDesde).padStart(2,"0")}_a_${rangoActual.yHasta}-${String(rangoActual.mHasta).padStart(2,"0")}.xlsx`,
+            { compression: true }
+          );
+        }
+      );
+  }
+
+
+  /* =========================================================
      USUARIOS / PREAUTORIZACIONES
   ========================================================= */
 
@@ -7431,6 +8370,62 @@
   }
 
 
+  async function numeroPersonalDisponible(
+    numeroPersonal,
+    {
+      excluirUsuarioId = "",
+      excluirAutorizacionId = ""
+    } = {}
+  ) {
+
+    const numeroBuscado =
+      claveNumeroPersonal(
+        numeroPersonal
+      );
+
+
+    if (!numeroBuscado) {
+      return true;
+    }
+
+
+    const [usuariosSnap, autorizacionesSnap] =
+      await Promise.all([
+        getDocs(collection(db, "usuarios")),
+        getDocs(collection(db, "preautorizados"))
+      ]);
+
+
+    const repetidoUsuario =
+      usuariosSnap.docs.some(
+        d =>
+          d.id !== excluirUsuarioId
+          &&
+          claveNumeroPersonal(
+            d.data()?.NumeroPersonal
+          ) === numeroBuscado
+      );
+
+
+    const repetidoAutorizacion =
+      autorizacionesSnap.docs.some(
+        d =>
+          d.id !== excluirAutorizacionId
+          &&
+          claveNumeroPersonal(
+            d.data()?.NumeroPersonal
+          ) === numeroBuscado
+      );
+
+
+    return !(
+      repetidoUsuario
+      ||
+      repetidoAutorizacion
+    );
+  }
+
+
   async function renderUsuarios() {
 
     const [
@@ -7514,6 +8509,7 @@
                         <thead>
 
                           <tr>
+                            <th>N° personal</th>
                             <th>Nombre</th>
                             <th>Correo</th>
                             <th>Área</th>
@@ -7533,6 +8529,10 @@
                                 a =>
                                   `
                                     <tr>
+
+                                      <td>
+                                        ${esc(a.NumeroPersonal || "-")}
+                                      </td>
 
                                       <td>
                                         ${esc(nombreCompleto(a))}
@@ -7645,6 +8645,7 @@
                         <thead>
 
                           <tr>
+                            <th>N° personal</th>
                             <th>Nombre</th>
                             <th>Correo</th>
                             <th>Área</th>
@@ -7665,6 +8666,10 @@
                                 u =>
                                   `
                                     <tr>
+
+                                      <td>
+                                        ${esc(u.NumeroPersonal || "-")}
+                                      </td>
 
                                       <td>
                                         ${esc(nombreCompleto(u))}
@@ -7859,6 +8864,26 @@
                 id="aRut"
                 value="${esc(a?.Rut || "")}"
               >
+
+            </div>
+
+
+            <div>
+
+              <label>
+                N° de personal
+              </label>
+
+              <input
+                id="aNumeroPersonal"
+                inputmode="numeric"
+                value="${esc(a?.NumeroPersonal || "")}"
+                placeholder="Ej.: 009981"
+              >
+
+              <div class="nota">
+                Identificador utilizado por SAP. Para quienes solicitan HHEE es obligatorio y no puede repetirse.
+              </div>
 
             </div>
 
@@ -8079,6 +9104,25 @@
           }
 
 
+          const numeroPersonal =
+            normalizarNumeroPersonal(
+              $("aNumeroPersonal").value
+            );
+
+
+          if (
+            $("aSolicita").checked
+            &&
+            !numeroPersonal
+          ) {
+
+            return toast(
+              "El N° de personal es obligatorio para quienes solicitan HHEE.",
+              "error"
+            );
+          }
+
+
           const datos = {
 
             Nombre:
@@ -8095,6 +9139,9 @@
               $("aRut")
                 .value
                 .trim(),
+
+            NumeroPersonal:
+              numeroPersonal,
 
             Area:
               $("aArea")
@@ -8124,6 +9171,35 @@
 
 
           try {
+
+            if (numeroPersonal) {
+
+              const disponible =
+                await numeroPersonalDisponible(
+                  numeroPersonal,
+                  {
+                    excluirUsuarioId:
+                      a?.uid
+                      ||
+                      "",
+
+                    excluirAutorizacionId:
+                      a?.id
+                      ||
+                      ""
+                  }
+                );
+
+
+              if (!disponible) {
+
+                return toast(
+                  `El N° de personal ${numeroPersonal} ya está asignado a otro usuario.`,
+                  "error"
+                );
+              }
+            }
+
 
             if (nuevo) {
 
@@ -8417,6 +9493,12 @@
             </div>
 
             <div>
+              <label>N° de personal</label>
+              <input id="pNumeroPersonal" inputmode="numeric" value="${esc(u?.NumeroPersonal || "")}" placeholder="Ej.: 009981">
+              <div class="nota">Identificador SAP. Obligatorio si el usuario solicita HHEE.</div>
+            </div>
+
+            <div>
               <label>Área</label>
               <input id="pArea" value="${esc(u?.Area || "")}">
             </div>
@@ -8505,6 +9587,55 @@
           }
 
 
+          const numeroPersonal =
+            normalizarNumeroPersonal(
+              $("pNumeroPersonal").value
+            );
+
+
+          if (
+            $("pSolicita").checked
+            &&
+            !numeroPersonal
+          ) {
+
+            return toast(
+              "El N° de personal es obligatorio para quienes solicitan HHEE.",
+              "error"
+            );
+          }
+
+
+          const disponible =
+            await numeroPersonalDisponible(
+              numeroPersonal,
+              {
+                excluirUsuarioId:
+                  u.id,
+
+                excluirAutorizacionId:
+                  normalizarCorreo(
+                    u.Correo
+                    ||
+                    ""
+                  )
+              }
+            );
+
+
+          if (
+            numeroPersonal
+            &&
+            !disponible
+          ) {
+
+            return toast(
+              `El N° de personal ${numeroPersonal} ya está asignado a otro usuario.`,
+              "error"
+            );
+          }
+
+
           const datos = {
 
             Nombre:
@@ -8521,6 +9652,9 @@
               $("pRut")
                 .value
                 .trim(),
+
+            NumeroPersonal:
+              numeroPersonal,
 
             Area:
               $("pArea")
@@ -8884,7 +10018,226 @@
   }
 
 
+  function opcionesAnios(
+    seleccionado = new Date().getFullYear()
+  ) {
+
+    const hoy =
+      new Date();
+
+
+    return Array.from(
+      {
+        length: 10
+      },
+      (_, i) =>
+        hoy.getFullYear()
+        -
+        6
+        +
+        i
+    )
+    .map(
+      y =>
+        `
+          <option
+            value="${y}"
+            ${
+              y === Number(seleccionado)
+                ?
+                  "selected"
+                :
+                  ""
+            }
+          >
+            ${y}
+          </option>
+        `
+    )
+    .join("");
+  }
+
+
+  function opcionesMeses(
+    seleccionado = new Date().getMonth() + 1
+  ) {
+
+    return MESES
+      .slice(1)
+      .map(
+        (m, i) =>
+          `
+            <option
+              value="${i + 1}"
+              ${
+                i + 1 === Number(seleccionado)
+                  ?
+                    "selected"
+                  :
+                    ""
+              }
+            >
+              ${m}
+            </option>
+          `
+      )
+      .join("");
+  }
+
+
+  function rangoPeriodos(
+    yDesde,
+    mDesde,
+    yHasta,
+    mHasta
+  ) {
+
+    const desdeIndice =
+      Number(yDesde) * 12
+      +
+      Number(mDesde)
+      -
+      1;
+
+
+    const hastaIndice =
+      Number(yHasta) * 12
+      +
+      Number(mHasta)
+      -
+      1;
+
+
+    if (hastaIndice < desdeIndice) {
+      throw new Error(
+        "El período hasta no puede ser anterior al período desde."
+      );
+    }
+
+
+    const ini =
+      `${Number(yDesde)}-${String(Number(mDesde)).padStart(2,"0")}-01`;
+
+
+    const siguienteMes =
+      Number(mHasta) === 12
+        ?
+          1
+        :
+          Number(mHasta) + 1;
+
+
+    const siguienteAnio =
+      Number(mHasta) === 12
+        ?
+          Number(yHasta) + 1
+        :
+          Number(yHasta);
+
+
+    const fin =
+      `${siguienteAnio}-${String(siguienteMes).padStart(2,"0")}-01`;
+
+
+    return {
+      ini,
+      fin,
+      yDesde: Number(yDesde),
+      mDesde: Number(mDesde),
+      yHasta: Number(yHasta),
+      mHasta: Number(mHasta)
+    };
+  }
+
+
+  function etiquetaRangoPeriodo(r) {
+
+    if (!r) {
+      return "";
+    }
+
+
+    if (
+      r.yDesde === r.yHasta
+      &&
+      r.mDesde === r.mHasta
+    ) {
+
+      return `${MESES[r.mDesde]} ${r.yDesde}`;
+    }
+
+
+    return `${MESES[r.mDesde]} ${r.yDesde} a ${MESES[r.mHasta]} ${r.yHasta}`;
+  }
+
+
+  async function solicitudesRango(
+    yDesde,
+    mDesde,
+    yHasta,
+    mHasta,
+    buffer = false
+  ) {
+
+    const r =
+      rangoPeriodos(
+        yDesde,
+        mDesde,
+        yHasta,
+        mHasta
+      );
+
+
+    let ini = r.ini;
+    let fin = r.fin;
+
+
+    if (buffer) {
+      ini = sumarDias(ini, -1);
+      fin = sumarDias(fin, 1);
+    }
+
+
+    const q =
+      query(
+        collection(db, "solicitudes"),
+        where("fechaInicio", ">=", ini),
+        where("fechaInicio", "<", fin)
+      );
+
+
+    const snap =
+      await getDocs(q);
+
+
+    const arr =
+      snap.docs.map(
+        d => ({
+          id: d.id,
+          ...d.data()
+        })
+      );
+
+
+    arr.forEach(
+      x =>
+        cacheSolicitudes.set(
+          x.id,
+          x
+        )
+    );
+
+
+    return arr;
+  }
+
+
   async function renderExportar() {
+
+    await cargarUsuarios();
+
+    const hoy = new Date();
+
 
     $("contenidoModulo")
       .innerHTML =
@@ -8892,53 +10245,53 @@
           <div class="bloque">
 
             <h3>
-              Respaldo mensual en Excel
+              Respaldo por rango en Excel
             </h3>
 
-            <div class="grid4">
+            <div class="mensaje mensajeInfo">
+              Puedes descargar varios meses en un solo archivo.
+              Por ejemplo: marzo 2026 a julio 2026.
+            </div>
 
-              ${selectPeriodo("exp")}
+            <div class="filtrosRango">
 
               <div>
-
-                <label>
-                  Estado
-                </label>
-
-                <select id="expEstado">
-
-                  <option value="">
-                    Todos
-                  </option>
-
-                  <option value="pendiente">
-                    Pendiente
-                  </option>
-
-                  <option value="aprobada">
-                    Aprobada
-                  </option>
-
-                  <option value="rechazada">
-                    Rechazada
-                  </option>
-
-                </select>
-
+                <label>Período desde</label>
+                <div class="periodoGrupo">
+                  <select id="expDesdeMes">
+                    ${opcionesMeses(hoy.getMonth() + 1)}
+                  </select>
+                  <select id="expDesdeAnio">
+                    ${opcionesAnios(hoy.getFullYear())}
+                  </select>
+                </div>
               </div>
 
+              <div>
+                <label>Período hasta</label>
+                <div class="periodoGrupo">
+                  <select id="expHastaMes">
+                    ${opcionesMeses(hoy.getMonth() + 1)}
+                  </select>
+                  <select id="expHastaAnio">
+                    ${opcionesAnios(hoy.getFullYear())}
+                  </select>
+                </div>
+              </div>
 
               <div>
+                <label>Estado</label>
+                <select id="expEstado">
+                  <option value="">Todos</option>
+                  <option value="pendiente">Pendiente</option>
+                  <option value="aprobada">Aprobada</option>
+                  <option value="rechazada">Rechazada</option>
+                </select>
+              </div>
 
-                <label>
-                  Área
-                </label>
-
-                <input
-                  id="expArea"
-                  placeholder="Todas"
-                >
-
+              <div>
+                <label>Área</label>
+                <input id="expArea" placeholder="Todas">
               </div>
 
             </div>
@@ -8971,6 +10324,84 @@
 
 
     let base = [];
+    let rangoActual = null;
+
+
+    const obtenerRangoSeleccionado =
+      () =>
+        rangoPeriodos(
+          Number($("expDesdeAnio").value),
+          Number($("expDesdeMes").value),
+          Number($("expHastaAnio").value),
+          Number($("expHastaMes").value)
+        );
+
+
+    const filtradas =
+      () =>
+        base.filter(
+          x =>
+            (
+              !$("expEstado").value
+              ||
+              normEstado(x.estado) === $("expEstado").value
+            )
+            &&
+            (
+              !$("expArea").value.trim()
+              ||
+              normalizarTexto(x.Area) ===
+              normalizarTexto($("expArea").value)
+            )
+        );
+
+
+    function renderVistaExport() {
+
+      const f = filtradas();
+
+
+      $("btnExpExcel").disabled =
+        !f.length;
+
+
+      $("expResultado").innerHTML =
+        `
+          ${
+            rangoActual
+              ?
+                `<div class="mensaje mensajeInfo"><b>Período cargado:</b> ${esc(etiquetaRangoPeriodo(rangoActual))}</div>`
+              :
+                ""
+          }
+
+          <div class="resumenKpi">
+
+            <div class="kpi">
+              <span>Total</span>
+              <strong>${f.length}</strong>
+            </div>
+
+            <div class="kpi">
+              <span>Pendientes</span>
+              <strong>${f.filter(x => normEstado(x.estado) === "pendiente").length}</strong>
+            </div>
+
+            <div class="kpi">
+              <span>Aprobadas</span>
+              <strong>${f.filter(x => normEstado(x.estado) === "aprobada").length}</strong>
+            </div>
+
+            <div class="kpi">
+              <span>Rechazadas</span>
+              <strong>${f.filter(x => normEstado(x.estado) === "rechazada").length}</strong>
+            </div>
+
+          </div>
+
+          ${tablaSolicitudes(f, "admin")}
+        `;
+    }
 
 
     $("btnExpCargar")
@@ -8980,14 +10411,16 @@
 
           try {
 
+            rangoActual =
+              obtenerRangoSeleccionado();
+
+
             base =
-              await solicitudesPeriodo(
-                Number(
-                  $("expAnio").value
-                ),
-                Number(
-                  $("expMes").value
-                )
+              await solicitudesRango(
+                rangoActual.yDesde,
+                rangoActual.mDesde,
+                rangoActual.yHasta,
+                rangoActual.mHasta
               );
 
 
@@ -9000,105 +10433,12 @@
 
 
             toast(
-              "No fue posible cargar el período.",
+              err.message || "No fue posible cargar el período.",
               "error"
             );
           }
         }
       );
-
-
-    const filtradas =
-      () =>
-        base.filter(
-          x =>
-            (
-              !$("expEstado").value
-              ||
-              normEstado(
-                x.estado
-              ) ===
-              $("expEstado").value
-            )
-            &&
-            (
-              !$("expArea").value.trim()
-              ||
-              normalizarTexto(
-                x.Area
-              ) ===
-              normalizarTexto(
-                $("expArea").value
-              )
-            )
-        );
-
-
-    function renderVistaExport() {
-
-      const f =
-        filtradas();
-
-
-      $("btnExpExcel")
-        .disabled =
-          !f.length;
-
-
-      $("expResultado")
-        .innerHTML =
-          `
-            <div class="resumenKpi">
-
-              <div class="kpi">
-                <span>Total</span>
-                <strong>${f.length}</strong>
-              </div>
-
-              <div class="kpi">
-                <span>Pendientes</span>
-                <strong>${
-                  f.filter(
-                    x =>
-                      normEstado(
-                        x.estado
-                      ) ===
-                      "pendiente"
-                  ).length
-                }</strong>
-              </div>
-
-              <div class="kpi">
-                <span>Aprobadas</span>
-                <strong>${
-                  f.filter(
-                    x =>
-                      normEstado(
-                        x.estado
-                      ) ===
-                      "aprobada"
-                  ).length
-                }</strong>
-              </div>
-
-              <div class="kpi">
-                <span>Rechazadas</span>
-                <strong>${
-                  f.filter(
-                    x =>
-                      normEstado(
-                        x.estado
-                      ) ===
-                      "rechazada"
-                  ).length
-                }</strong>
-              </div>
-
-            </div>
-
-            ${tablaSolicitudes(f,"admin")}
-          `;
-    }
 
 
     $("expEstado")
@@ -9118,29 +10458,28 @@
     $("btnExpExcel")
       .addEventListener(
         "click",
-        () =>
-          exportarExcel(
+        () => {
+
+          if (!rangoActual) {
+            return;
+          }
+
+
+          exportarExcelRango(
             filtradas(),
-            Number(
-              $("expAnio").value
-            ),
-            Number(
-              $("expMes").value
-            )
-          )
+            rangoActual
+          );
+        }
       );
   }
 
 
-  function exportarExcel(
+  function exportarExcelRango(
     lista,
-    y,
-    m
+    rango
   ) {
 
-    if (
-      !window.XLSX
-    ) {
+    if (!window.XLSX) {
 
       return toast(
         "No se cargó SheetJS.",
@@ -9151,220 +10490,86 @@
 
     const sol =
       lista.map(
-        (
-          s,
-          i
-        ) => ({
+        (s, i) => ({
 
-          "N°":
-            i + 1,
-
-          "Nombre":
-            s.Nombre || "",
-
-          "Apellidos":
-            s.Apellido || "",
-
-          "RUT":
-            s.Rut || "",
-
-          "Área":
-            s.Area || "",
-
-          "Correo trabajador":
-            s.correoTrabajador || "",
-
-          "Supervisor":
-            s.supervisorCorreo || "",
-
-          "Tipo formulario":
-            s.tipoFormulario || "",
-
-          "Día trabajo":
-            s.diaTrabajo || "",
-
-          "Fecha inicio":
-            fechaCL(s.fechaInicio),
-
-          "Fecha término":
-            fechaCL(s.fechaTermino),
-
-          "Hora inicio":
-            s.horaInicio || "",
-
-          "Hora término":
-            s.horaTermino || "",
-
-          "Motivo trabajo":
-            s.motivoTrabajo || "",
-
-          "Justificación":
-            s.justificacion || "",
-
-          "CAPEX":
-            s.ordenInternaCAPEX || "",
-
-          "Estado":
-            s.estado || "",
-
-          "Comentario supervisor":
-            s.comentarioSupervisor || "",
-
-          "Fecha registro":
-            timestampCL(s.fechaRegistro),
-
-          "Fecha revisión":
-            timestampCL(s.fechaDecision),
-
-          "Extensión":
-            s.tieneExtension ? "Sí" : "No",
-
-          "Motivo extensión":
-            s.motivoExtension || "",
-
-          "Hora inicio extensión":
-            s.horaInicioExtension || "",
-
-          "Hora término extensión":
-            s.horaTerminoExtension || "",
-
-          "Horas 50%":
-            numero(s.horas50),
-
-          "Horas 75%":
-            numero(s.horas75),
-
-          "Horas 100%":
-            numero(s.horas100),
-
-          "Horas totales":
-            numero(s.horasTotales)
+          "N°": i + 1,
+          "N° de personal": numeroPersonalDeSolicitud(s),
+          "Nombre": s.Nombre || "",
+          "Apellidos": s.Apellido || "",
+          "RUT": s.Rut || "",
+          "Área": s.Area || "",
+          "Correo trabajador": s.correoTrabajador || "",
+          "Supervisor": s.supervisorCorreo || "",
+          "Tipo formulario": s.tipoFormulario || "",
+          "Día trabajo": s.diaTrabajo || "",
+          "Fecha inicio": fechaCL(s.fechaInicio),
+          "Fecha término": fechaCL(s.fechaTermino),
+          "Hora inicio": s.horaInicio || "",
+          "Hora término": s.horaTermino || "",
+          "Motivo trabajo": s.motivoTrabajo || "",
+          "Justificación": s.justificacion || "",
+          "CAPEX": s.ordenInternaCAPEX || "",
+          "Estado": s.estado || "",
+          "Comentario supervisor": s.comentarioSupervisor || "",
+          "Fecha registro": timestampCL(s.fechaRegistro),
+          "Fecha revisión": timestampCL(s.fechaDecision),
+          "Extensión": s.tieneExtension ? "Sí" : "No",
+          "Motivo extensión": s.motivoExtension || "",
+          "Hora inicio extensión": s.horaInicioExtension || "",
+          "Hora término extensión": s.horaTerminoExtension || "",
+          "Horas 50%": numero(s.horas50),
+          "Horas 75%": numero(s.horas75),
+          "Horas 100%": numero(s.horas100),
+          "Horas totales": numero(s.horasTotales)
         })
       );
 
 
     const base = [];
-
-
     let n = 1;
 
 
     lista.forEach(
       s =>
-        (
-          s.tramosCalculados
-          ||
-          []
-        )
-        .forEach(
-          t =>
-            base.push({
+        (s.tramosCalculados || [])
+          .forEach(
+            t => {
 
-              "Número":
-                n++,
+              const fecha = String(t.fecha || "");
+              const anio = Number(fecha.slice(0, 4)) || "";
+              const mes = Number(fecha.slice(5, 7)) || "";
 
-              "Nombre":
-                s.Nombre || "",
 
-              "Apellidos":
-                s.Apellido || "",
-
-              "RUT":
-                s.Rut || "",
-
-              "Fecha inicio":
-                fechaCL(t.fecha),
-
-              "Hr inicio":
-                t.horaInicio || "",
-
-              "Hr término":
-                t.horaTermino ===
-                "00:00"
-                  ?
-                    "23:59"
-                  :
-                    t.horaTermino || "",
-
-              "Horas trabajadas":
-                numero(t.horas),
-
-              "% hrs extras":
-                numero(t.recargo) / 100,
-
-              "Motivo del trabajo":
-                String(
-                  t.origen
-                  ||
-                  ""
-                )
-                .toLowerCase()
-                .includes(
-                  "extensión"
-                )
-                  ?
-                    `Extensión de trabajo ${s.motivoExtension || ""}`
-                  :
-                    s.motivoTrabajo || "",
-
-              "Estado":
-                s.estado || "",
-
-              "Comentarios":
-                s.justificacion || "",
-
-              "MES":
-                m,
-
-              "Año":
-                y,
-
-              "día":
-                Number(
-                  String(
-                    t.fecha
-                    ||
-                    ""
-                  )
-                  .slice(
-                    8,
-                    10
-                  )
-                ),
-
-              "CAPEX":
-                s.ordenInternaCAPEX || "",
-
-              "Fecha Registro":
-                timestampCL(
-                  s.fechaRegistro
-                ),
-
-              "Fecha revisión":
-                timestampCL(
-                  s.fechaDecision
-                ),
-
-              "Extensión de jornada":
-                s.tieneExtension
-                  ?
-                    "Sí"
-                  :
-                    "No",
-
-              "Hora inicio extensión":
-                s.horaInicioExtension || "",
-
-              "Hora término extensión":
-                s.horaTerminoExtension || "",
-
-              "Nombre completo":
-                nombreCompleto(s),
-
-              "Área":
-                s.Area || ""
-            })
-        )
+              base.push({
+                "Número": n++,
+                "N° de personal": numeroPersonalDeSolicitud(s),
+                "Nombre": s.Nombre || "",
+                "Apellidos": s.Apellido || "",
+                "RUT": s.Rut || "",
+                "Fecha inicio": fechaCL(t.fecha),
+                "Hr inicio": t.horaInicio || "",
+                "Hr término": t.horaTermino === "00:00" ? "23:59" : t.horaTermino || "",
+                "Horas trabajadas": numero(t.horas),
+                "% hrs extras": numero(t.recargo) / 100,
+                "Motivo del trabajo": String(t.origen || "").toLowerCase().includes("extensión")
+                  ? `Extensión de trabajo ${s.motivoExtension || ""}`
+                  : s.motivoTrabajo || "",
+                "Estado": s.estado || "",
+                "Comentarios": s.justificacion || "",
+                "MES": mes,
+                "Año": anio,
+                "día": Number(fecha.slice(8, 10)) || "",
+                "CAPEX": s.ordenInternaCAPEX || "",
+                "Fecha Registro": timestampCL(s.fechaRegistro),
+                "Fecha revisión": timestampCL(s.fechaDecision),
+                "Extensión de jornada": s.tieneExtension ? "Sí" : "No",
+                "Hora inicio extensión": s.horaInicioExtension || "",
+                "Hora término extensión": s.horaTerminoExtension || "",
+                "Nombre completo": nombreCompleto(s),
+                "Área": s.Area || ""
+              });
+            }
+          )
     );
 
 
@@ -9376,25 +10581,16 @@
       wb,
       XLSX.utils.json_to_sheet([
         {
-          Concepto:
-            "Período",
-          Valor:
-            `${MESES[m]} ${y}`
+          Concepto: "Período",
+          Valor: etiquetaRangoPeriodo(rango)
         },
         {
-          Concepto:
-            "Total solicitudes",
-          Valor:
-            lista.length
+          Concepto: "Total solicitudes",
+          Valor: lista.length
         },
         {
-          Concepto:
-            "Generado",
-          Valor:
-            new Date()
-              .toLocaleString(
-                "es-CL"
-              )
+          Concepto: "Generado",
+          Valor: new Date().toLocaleString("es-CL")
         }
       ]),
       "Resumen"
@@ -9403,28 +10599,31 @@
 
     XLSX.utils.book_append_sheet(
       wb,
-      XLSX.utils.json_to_sheet(
-        sol
-      ),
+      XLSX.utils.json_to_sheet(sol),
       "Solicitudes"
     );
 
 
     XLSX.utils.book_append_sheet(
       wb,
-      XLSX.utils.json_to_sheet(
-        base
-      ),
+      XLSX.utils.json_to_sheet(base),
       "Base HHEE"
     );
 
 
+    const desde =
+      `${rango.yDesde}-${String(rango.mDesde).padStart(2,"0")}`;
+
+
+    const hasta =
+      `${rango.yHasta}-${String(rango.mHasta).padStart(2,"0")}`;
+
+
     XLSX.writeFile(
       wb,
-      `HHEE_${MESES[m]}_${y}.xlsx`,
+      `HHEE_${desde}_a_${hasta}.xlsx`,
       {
-        compression:
-          true
+        compression: true
       }
     );
 
@@ -9560,11 +10759,13 @@
       guessHeader(
         sapCabeceras,
         [
-          "rut",
-          "trabajador",
+          "numero de personal",
+          "n° de personal",
+          "nº de personal",
+          "numero personal",
           "personal",
-          "empleado",
-          "pernr"
+          "pernr",
+          "empleado"
         ]
       );
 
@@ -9587,7 +10788,9 @@
           "recargo",
           "porcentaje",
           "% hrs extras",
-          "tipo hora"
+          "tipo hora",
+          "excepcion",
+          "excepción"
         ]
       );
 
@@ -9609,112 +10812,54 @@
         `
           <div class="bloque">
 
-            <h3>
-              Mapeo de columnas SAP
-            </h3>
-
-            <div class="grid4">
-
+            <div class="concCabecera">
               <div>
-
-                <label>
-                  Trabajador
-                </label>
-
-                <select id="sapColId">
-                  ${optionsHeaders(hId)}
-                </select>
-
+                <h3>Comparación a realizar</h3>
+                <p>
+                  La aplicación cruzará <b>N° de personal + fecha + recargo</b>.
+                  El nombre siempre se mostrará desde BD.HE para que Administración pueda identificar a la persona.
+                </p>
               </div>
-
-
-              <div>
-
-                <label>
-                  Fecha
-                </label>
-
-                <select id="sapColFecha">
-                  ${optionsHeaders(hFecha)}
-                </select>
-
-              </div>
-
-
-              <div>
-
-                <label>
-                  Recargo
-                </label>
-
-                <select id="sapColRecargo">
-                  ${optionsHeaders(hRec)}
-                </select>
-
-              </div>
-
-
-              <div>
-
-                <label>
-                  Horas
-                </label>
-
-                <select id="sapColHoras">
-                  ${optionsHeaders(hHoras)}
-                </select>
-
-              </div>
-
             </div>
 
+            <div class="mensaje mensajeInfo">
+              <b>Archivo SAP:</b> ${esc(sapArchivoNombre || "Archivo cargado")} ·
+              <b>${sapFilas.length}</b> fila(s).
+            </div>
 
-            <div
-              class="grid2"
-              style="margin-top:14px"
-            >
+            <details class="configAvanzada">
+              <summary>Configuración de columnas SAP (solo revisar si cambió el formato)</summary>
+              <div class="configContenido">
+                <div class="grid4">
 
-              <div>
+                  <div>
+                    <label>N° de personal SAP</label>
+                    <select id="sapColId">${optionsHeaders(hId)}</select>
+                  </div>
 
-                <label>
-                  Campo usado en Firebase para identificar trabajador
-                </label>
+                  <div>
+                    <label>Fecha</label>
+                    <select id="sapColFecha">${optionsHeaders(hFecha)}</select>
+                  </div>
 
-                <select id="sapModoId">
+                  <div>
+                    <label>Recargo</label>
+                    <select id="sapColRecargo">${optionsHeaders(hRec)}</select>
+                  </div>
 
-                  <option value="rut">
-                    RUT
-                  </option>
+                  <div>
+                    <label>Horas</label>
+                    <select id="sapColHoras">${optionsHeaders(hHoras)}</select>
+                  </div>
 
-                  <option value="correo">
-                    Correo
-                  </option>
-
-                  <option value="nombre">
-                    Nombre completo
-                  </option>
-
-                </select>
-
+                </div>
               </div>
+            </details>
 
-
-              <div
-                style="
-                  display:flex;
-                  align-items:end
-                "
-              >
-
-                <button
-                  class="btn btnPrimario w100"
-                  id="btnComparar"
-                >
-                  Comparar Firebase vs SAP
-                </button>
-
-              </div>
-
+            <div class="acciones">
+              <button class="btn btnPrimario" id="btnComparar">
+                Conciliar BD.HE vs SAP
+              </button>
             </div>
 
           </div>
@@ -9734,73 +10879,42 @@
     if (
       v instanceof Date
       &&
-      !Number.isNaN(
-        v.getTime()
-      )
+      !Number.isNaN(v.getTime())
     ) {
 
-      return `${v.getFullYear()}-${String(
-        v.getMonth() + 1
-      ).padStart(2,"0")}-${String(
-        v.getDate()
-      ).padStart(2,"0")}`;
+      return `${v.getFullYear()}-${String(v.getMonth() + 1).padStart(2,"0")}-${String(v.getDate()).padStart(2,"0")}`;
     }
 
 
     if (
-      typeof v ===
-      "number"
+      typeof v === "number"
       &&
       window.XLSX
     ) {
 
       const p =
-        XLSX.SSF.parse_date_code(
-          v
-        );
+        XLSX.SSF.parse_date_code(v);
 
 
       if (p) {
-
-        return `${p.y}-${String(
-          p.m
-        ).padStart(2,"0")}-${String(
-          p.d
-        ).padStart(2,"0")}`;
+        return `${p.y}-${String(p.m).padStart(2,"0")}-${String(p.d).padStart(2,"0")}`;
       }
     }
 
 
-    const s =
-      String(v ?? "")
-        .trim();
+    const texto =
+      String(v ?? "").trim();
 
 
     let m;
 
 
-    if (
-      (
-        m =
-          s.match(
-            /^(\d{4})[-\/]([01]?\d)[-\/]([0-3]?\d)/
-          )
-      )
-    ) {
-
+    if ((m = texto.match(/^(\d{4})[-\/]([01]?\d)[-\/]([0-3]?\d)/))) {
       return `${m[1]}-${m[2].padStart(2,"0")}-${m[3].padStart(2,"0")}`;
     }
 
 
-    if (
-      (
-        m =
-          s.match(
-            /^([0-3]?\d)[-\/]([01]?\d)[-\/](\d{4})/
-          )
-      )
-    ) {
-
+    if ((m = texto.match(/^([0-3]?\d)[-\/]([01]?\d)[-\/](\d{4})/))) {
       return `${m[3]}-${m[2].padStart(2,"0")}-${m[1].padStart(2,"0")}`;
     }
 
@@ -9809,449 +10923,424 @@
   }
 
 
-  function idFirebase(
-    s,
-    modo
-  ) {
-
-    if (
-      modo ===
-      "correo"
-    ) {
-
-      return normalizarCorreo(
-        s.correoTrabajador
-      );
-    }
-
-
-    if (
-      modo ===
-      "nombre"
-    ) {
-
-      return normalizarTexto(
-        nombreCompleto(s)
-      );
-    }
-
-
-    return normalizarRut(
-      s.Rut
-    );
-  }
-
-
-  function idSap(
-    v,
-    modo
-  ) {
-
-    if (
-      modo ===
-      "correo"
-    ) {
-
-      return normalizarCorreo(v);
-    }
-
-
-    if (
-      modo ===
-      "nombre"
-    ) {
-
-      return normalizarTexto(v);
-    }
-
-
-    return normalizarRut(v);
-  }
-
-
   function claveConc(
-    id,
+    numeroPersonal,
     fecha,
-    rec
+    recargo
   ) {
 
-    return `${id}|${fecha}|${rec}`;
+    return `${numeroPersonal}|${fecha}|${recargo}`;
+  }
+
+
+  function resumenConciliacionPorTrabajador(resultados) {
+
+    const mapa = new Map();
+
+
+    resultados.forEach(
+      fila => {
+
+        const claveTrabajador =
+          fila.claveTrabajador
+          ||
+          fila.numeroPersonal
+          ||
+          fila.nombre;
+
+
+        if (!mapa.has(claveTrabajador)) {
+
+          mapa.set(
+            claveTrabajador,
+            {
+              claveTrabajador,
+              numeroPersonal: fila.numeroPersonal || "",
+              nombre: fila.nombre || "Sin nombre",
+              area: fila.area || "",
+              registradas: 0,
+              bonificacion: 0,
+              pagar: 0,
+              sap: 0,
+              diferencia: 0,
+              incidencias: 0,
+              estado: "Conforme",
+              filas: []
+            }
+          );
+        }
+
+
+        const x = mapa.get(claveTrabajador);
+
+        x.registradas += numero(fila.registradas);
+        x.bonificacion += numero(fila.bonificacion);
+        x.pagar += numero(fila.pagar);
+        x.sap += numero(fila.sap);
+        x.diferencia += numero(fila.diferencia);
+        x.filas.push(fila);
+
+
+        if (fila.estado !== "Conforme") {
+          x.incidencias += 1;
+          x.estado = "Revisar";
+        }
+      }
+    );
+
+
+    return [...mapa.values()]
+      .map(
+        x => ({
+          ...x,
+          registradas: red2(x.registradas),
+          bonificacion: red2(x.bonificacion),
+          pagar: red2(x.pagar),
+          sap: red2(x.sap),
+          diferencia: red2(x.diferencia)
+        })
+      )
+      .sort(
+        (a, b) =>
+          a.nombre.localeCompare(b.nombre, "es")
+      );
+  }
+
+
+  function textoResultadoTrabajador(x) {
+
+    const problemas =
+      x.filas
+        .filter(f => f.estado !== "Conforme")
+        .slice(0, 3)
+        .map(
+          f =>
+            `${fechaCL(f.fecha)} ${f.recargo}%: ${vistaHoras(f.registradas)} h reales${f.bonificacion > 0 ? ` + ${vistaHoras(f.bonificacion)} h bonificación` : ""} = ${vistaHoras(f.pagar)} h a pagar / SAP ${vistaHoras(f.sap)} h`
+        );
+
+
+    if (!problemas.length) {
+      return "Sin diferencias.";
+    }
+
+
+    const extra =
+      x.incidencias > problemas.length
+        ? `; y ${x.incidencias - problemas.length} incidencia(s) adicional(es).`
+        : ".";
+
+
+    return `${problemas.join("; ")}${extra}`;
   }
 
 
   async function ejecutarConciliacion() {
 
-    const y =
-      Number(
-        $("conAnio").value
-      );
+    const y = Number($("conAnio").value);
+    const m = Number($("conMes").value);
+
+    const cId = $("sapColId").value;
+    const cF = $("sapColFecha").value;
+    const cR = $("sapColRecargo").value;
+    const cH = $("sapColHoras").value;
 
 
-    const m =
-      Number(
-        $("conMes").value
-      );
-
-
-    const modo =
-      $("sapModoId").value;
-
-
-    const cId =
-      $("sapColId").value;
-
-
-    const cF =
-      $("sapColFecha").value;
-
-
-    const cR =
-      $("sapColRecargo").value;
-
-
-    const cH =
-      $("sapColHoras").value;
-
-
-    if (
-      !sapFilas.length
-    ) {
-
-      return toast(
-        "Primero carga el Excel SAP.",
-        "error"
-      );
+    if (!sapFilas.length) {
+      return toast("Primero carga el Excel SAP.", "error");
     }
 
 
     try {
 
+      await cargarUsuarios();
+
+
       const solicitudes =
         (
-          await solicitudesPeriodo(
-            y,
-            m,
-            true
-          )
+          await solicitudesPeriodo(y, m, true)
         )
         .filter(
           x =>
-            normEstado(
-              x.estado
-            ) ===
-            "aprobada"
+            normEstado(x.estado) === "aprobada"
         );
 
 
-      const r =
-        rangoMes(
-          y,
-          m
+      const rango = rangoMes(y, m);
+
+
+      const filasBd =
+        filasAprobadasPorFechaRecargo(
+          solicitudes,
+          rango
         );
 
 
-      const fb =
-        new Map();
+      const bd = new Map();
+      const sap = new Map();
+      const meta = new Map();
 
 
-      const sp =
-        new Map();
+      filasBd.forEach(
+        fila => {
 
-
-      const nombres =
-        new Map();
-
-
-      solicitudes.forEach(
-        s => {
-
-          const id =
-            idFirebase(
-              s,
-              modo
+          const numeroPersonal =
+            normalizarNumeroPersonal(
+              fila.numeroPersonal
             );
 
 
-          if (!id) {
-            return;
-          }
-
-
-          (
-            s.tramosCalculados
+          const idCruce =
+            claveNumeroPersonal(numeroPersonal)
             ||
-            []
-          )
-          .forEach(
-            t => {
-
-              const fecha =
-                t.fecha
-                ||
-                "";
+            `__SINNUM__${fila.idInterno}`;
 
 
-              if (
-                fecha <
-                r.ini
-                ||
-                fecha >=
-                r.fin
-              ) {
-
-                return;
-              }
+          const k =
+            claveConc(
+              idCruce,
+              fila.fecha,
+              fila.recargo
+            );
 
 
-              const rec =
-                recargoNumero(
-                  t.recargo
-                );
+          bd.set(
+            k,
+            {
+              registradas: fila.horasRegistradas,
+              bonificacion: fila.bonificacion,
+              pagar: fila.horasPagar,
+              solicitudes: fila.solicitudes || []
+            }
+          );
 
 
-              const k =
-                claveConc(
-                  id,
-                  fecha,
-                  rec
-                );
-
-
-              fb.set(
-                k,
-                (
-                  fb.get(k)
-                  ||
-                  0
-                )
-                +
-                numero(
-                  t.horas
-                )
-              );
-
-
-              nombres.set(
-                k,
-                nombreCompleto(s)
-                ||
-                id
-              );
+          meta.set(
+            idCruce,
+            {
+              numeroPersonal,
+              nombre: fila.nombre,
+              area: fila.area,
+              claveTrabajador: fila.idInterno
             }
           );
         }
       );
 
 
+      const usuariosPorNumero = new Map();
+
+      cacheUsuarios.forEach(
+        u => {
+          const np = claveNumeroPersonal(u.NumeroPersonal);
+          if (np) usuariosPorNumero.set(np, u);
+        }
+      );
+
+
+      const fechasSapValidas = [];
+
+
       sapFilas.forEach(
         row => {
 
-          const id =
-            idSap(
-              row[cId],
-              modo
+          const numeroPersonalOriginal =
+            normalizarNumeroPersonal(
+              row[cId]
+            );
+
+          const numeroPersonal =
+            claveNumeroPersonal(
+              numeroPersonalOriginal
             );
 
 
-          const fecha =
-            fechaSAP(
-              row[cF]
-            );
+          const fecha = fechaSAP(row[cF]);
+          const recargo = recargoSapNumero(row[cR]);
+          const horas = numero(row[cH]);
 
 
-          const rec =
-            recargoNumero(
-              row[cR]
-            );
-
-
-          const horas =
-            numero(
-              row[cH]
-            );
+          if (fecha) {
+            fechasSapValidas.push(fecha);
+          }
 
 
           if (
-            !id
+            !numeroPersonal
             ||
             !fecha
             ||
-            !rec
+            ![50, 75, 100].includes(recargo)
           ) {
-
             return;
           }
 
 
           if (
-            fecha <
-            r.ini
+            fecha < rango.ini
             ||
-            fecha >=
-            r.fin
+            fecha >= rango.fin
           ) {
-
             return;
           }
 
 
           const k =
             claveConc(
-              id,
+              numeroPersonal,
               fecha,
-              rec
+              recargo
             );
 
 
-          sp.set(
+          sap.set(
             k,
-            (
-              sp.get(k)
-              ||
-              0
+            red2(
+              (sap.get(k) || 0)
+              +
+              horas
             )
-            +
-            horas
           );
 
 
-          if (
-            !nombres.has(
-              k
-            )
-          ) {
+          if (!meta.has(numeroPersonal)) {
 
-            nombres.set(
-              k,
-              String(
-                row[cId]
-                ||
-                id
-              )
+            const usuario =
+              usuariosPorNumero.get(numeroPersonal);
+
+
+            meta.set(
+              numeroPersonal,
+              {
+                numeroPersonal: usuario?.NumeroPersonal || numeroPersonalOriginal || numeroPersonal,
+                nombre: usuario ? nombreCompleto(usuario) : `N° personal ${numeroPersonalOriginal || numeroPersonal}`,
+                area: usuario?.Area || "",
+                claveTrabajador: usuario?.id || numeroPersonal
+              }
             );
           }
         }
       );
 
 
-      const keys = [
-        ...new Set([
-          ...fb.keys(),
-          ...sp.keys()
-        ])
-      ]
-      .sort();
+      const filasSapPeriodo =
+        [...sap.values()].length;
+
+
+      if (
+        filasSapPeriodo === 0
+        &&
+        fechasSapValidas.length
+      ) {
+
+        const ordenadas =
+          [...fechasSapValidas].sort();
+
+
+        throw new Error(
+          `El Excel SAP no contiene registros válidos para ${MESES[m]} ${y}. `
+          +
+          `Las fechas detectadas van desde ${fechaCL(ordenadas[0])} hasta ${fechaCL(ordenadas[ordenadas.length - 1])}. Revisa el período o el archivo cargado.`
+        );
+      }
+
+
+      const keys =
+        [...new Set([
+          ...bd.keys(),
+          ...sap.keys()
+        ])]
+        .sort();
 
 
       const resultados =
         keys.map(
           k => {
 
-            const [
-              id,
-              fecha,
-              rec
-            ] =
-              k.split("|");
+            const partes = k.split("|");
+            const idCruce = partes[0];
+            const fecha = partes[1];
+            const recargo = Number(partes[2]);
+
+            const b = bd.get(k) || { registradas: 0, bonificacion: 0, pagar: 0, solicitudes: [] };
+            const hs = red2(sap.get(k) || 0);
+
+            const mta =
+              meta.get(idCruce)
+              ||
+              {
+                numeroPersonal: idCruce.startsWith("__SINNUM__") ? "" : idCruce,
+                nombre: idCruce.startsWith("__SINNUM__") ? "Trabajador sin N° personal" : `N° personal ${idCruce}`,
+                area: "",
+                claveTrabajador: idCruce
+              };
 
 
-            const hf =
-              red2(
-                fb.get(k)
-                ||
-                0
-              );
+            const registradas = red2(b.registradas || 0);
+            const bonificacion = red2(b.bonificacion || 0);
+            const pagar = red2(b.pagar || 0);
+            const diferencia = red2(hs - pagar);
+
+            let estado = "Conforme";
 
 
-            const hs =
-              red2(
-                sp.get(k)
-                ||
-                0
-              );
-
-
-            const dif =
-              red2(
-                hf - hs
-              );
+            if (idCruce.startsWith("__SINNUM__")) {
+              estado = "Sin N° personal";
+            }
+            else if (pagar === 0 && hs > 0) {
+              estado = "Solo SAP";
+            }
+            else if (pagar > 0 && hs === 0) {
+              estado = "N° no encontrado / sin horas SAP";
+            }
+            else if (Math.abs(diferencia) >= 0.01) {
+              estado = "Revisar";
+            }
 
 
             return {
-
-              id,
-
-              nombre:
-                nombres.get(k)
-                ||
-                id,
-
+              clave: k,
+              claveTrabajador: mta.claveTrabajador || idCruce,
+              numeroPersonal: mta.numeroPersonal || "",
+              nombre: mta.nombre || "Sin nombre",
+              area: mta.area || "",
               fecha,
-
-              recargo:
-                Number(rec),
-
-              firebase:
-                hf,
-
-              sap:
-                hs,
-
-              diferencia:
-                dif,
-
-              estado:
-                Math.abs(dif) <
-                0.01
-                  ?
-                    "OK"
-                  :
-                hf ===
-                0
-                  ?
-                    "Solo SAP"
-                  :
-                hs ===
-                0
-                  ?
-                    "Solo Firebase"
-                  :
-                    "Diferencia"
+              recargo,
+              registradas,
+              bonificacion,
+              pagar,
+              sap: hs,
+              diferencia,
+              estado,
+              solicitudes: b.solicitudes || []
             };
           }
         );
 
 
+      const resumenTrabajadores =
+        resumenConciliacionPorTrabajador(
+          resultados
+        );
+
+
       ultimaConciliacion = {
-
-        anio:
-          y,
-
-        mes:
-          m,
-
+        anio: y,
+        mes: m,
         resultados,
-
-        generado:
-          new Date()
-            .toISOString(),
-
-        generadoPor:
-          nombreCompleto(
-            perfilActual
-          )
+        resumenTrabajadores,
+        archivoSap: sapArchivoNombre || "",
+        generado: new Date().toISOString(),
+        generadoPor: nombreCompleto(perfilActual),
+        reglaPagoConfigurada: REGLA_PAGO_CONFIGURADA,
+        horasMinimasPago: HORAS_MINIMAS_PAGO
       };
 
 
       try {
-
         sessionStorage.setItem(
           "ultimaConciliacionHHEE",
-          JSON.stringify(
-            ultimaConciliacion
-          )
+          JSON.stringify(ultimaConciliacion)
         );
-
       }
       catch {}
 
@@ -10263,163 +11352,243 @@
 
       console.error(err);
 
-
       toast(
-        "No fue posible realizar la conciliación.",
+        err.message || "No fue posible realizar la conciliación.",
         "error"
       );
     }
   }
 
 
-  function renderResultadoConciliacion() {
+  window.verDetalleConciliacion =
+    encoded => {
 
-    if (
-      !ultimaConciliacion
-    ) {
-      return;
+      if (!ultimaConciliacion) return;
+
+
+      const clave =
+        decodeURIComponent(encoded);
+
+
+      const trabajador =
+        (ultimaConciliacion.resumenTrabajadores || [])
+          .find(
+            x =>
+              x.claveTrabajador === clave
+          );
+
+
+      if (!trabajador) return;
+
+
+      const filas =
+        (ultimaConciliacion.resultados || [])
+          .filter(
+            x =>
+              x.claveTrabajador === clave
+          );
+
+
+      modal(
+        `
+          <h3>${esc(trabajador.nombre)}</h3>
+
+          <div class="mensaje mensajeInfo">
+            <b>N° de personal:</b> ${esc(trabajador.numeroPersonal || "Sin registrar")} ·
+            <b>Área:</b> ${esc(trabajador.area || "-")}
+          </div>
+
+          <div class="resumenKpi">
+            <div class="kpi"><span>Registradas</span><strong>${vistaHoras(trabajador.registradas)} h</strong></div>
+            <div class="kpi"><span>Bonificación</span><strong>${vistaHoras(trabajador.bonificacion)} h</strong></div>
+            <div class="kpi"><span>Horas a pagar</span><strong>${vistaHoras(trabajador.pagar)} h</strong></div>
+            <div class="kpi"><span>SAP</span><strong>${vistaHoras(trabajador.sap)} h</strong></div>
+            <div class="kpi"><span>Diferencia</span><strong>${vistaHoras(trabajador.diferencia)} h</strong></div>
+          </div>
+
+          <div class="tablaWrap">
+            <table class="tabla">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Recargo</th>
+                  <th>Registradas</th>
+                  <th>Bonificación</th>
+                  <th>Horas a pagar</th>
+                  <th>SAP</th>
+                  <th>Diferencia</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${
+                  filas.map(
+                    f =>
+                      `
+                        <tr>
+                          <td>${fechaCL(f.fecha)}</td>
+                          <td>${f.recargo}%</td>
+                          <td>${vistaHoras(f.registradas)} h</td>
+                          <td>
+                            ${vistaHoras(f.bonificacion)} h
+                            ${f.bonificacion > 0 ? `<span class="bonificacionPago">Mínimo ${vistaHoras(HORAS_MINIMAS_PAGO)} h</span>` : ""}
+                          </td>
+                          <td><b>${vistaHoras(f.pagar)} h</b></td>
+                          <td>${vistaHoras(f.sap)} h</td>
+                          <td>${vistaHoras(f.diferencia)} h</td>
+                          <td>
+                            <span class="estado ${f.estado === "Conforme" ? "ok" : "diferencia"}">${esc(f.estado)}</span>
+                          </td>
+                        </tr>
+                      `
+                  ).join("")
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <div class="acciones">
+            <button class="btn btnSecundario" onclick="window.cerrarModal()">Cerrar</button>
+          </div>
+        `
+      );
+    };
+
+
+  function tablaResumenConciliacion(lista) {
+
+    if (!lista.length) {
+      return `<div class="mensaje mensajeInfo">No hay trabajadores en esta sección.</div>`;
     }
 
 
-    const r =
-      ultimaConciliacion.resultados;
+    return `
+      <div class="tablaWrap">
+        <table class="tabla tablaResumenTrabajador">
+          <thead>
+            <tr>
+              <th>N° personal</th>
+              <th>Trabajador</th>
+              <th>Horas registradas</th>
+              <th>Bonificación</th>
+              <th>Horas a pagar</th>
+              <th>SAP</th>
+              <th>Diferencia</th>
+              <th>Incidencias</th>
+              <th>Estado</th>
+              <th>Resultado</th>
+              <th>Detalle</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${
+              lista.map(
+                x =>
+                  `
+                    <tr>
+                      <td>${esc(x.numeroPersonal || "Sin N°")}</td>
+                      <td>
+                        <span class="nombrePrincipal">${esc(x.nombre)}</span>
+                        <span class="subDato">${esc(x.area || "")}</span>
+                      </td>
+                      <td>${vistaHoras(x.registradas)} h</td>
+                      <td>${vistaHoras(x.bonificacion)} h</td>
+                      <td><b>${vistaHoras(x.pagar)} h</b></td>
+                      <td>${vistaHoras(x.sap)} h</td>
+                      <td>${vistaHoras(x.diferencia)} h</td>
+                      <td>${x.incidencias}</td>
+                      <td>
+                        <span class="estado ${x.estado === "Conforme" ? "ok" : "estadoRevision"}">${esc(x.estado)}</span>
+                      </td>
+                      <td>${esc(textoResultadoTrabajador(x))}</td>
+                      <td>
+                        <button
+                          class="btn btnSecundario"
+                          onclick="window.verDetalleConciliacion('${encodeURIComponent(x.claveTrabajador)}')"
+                        >
+                          Ver detalle
+                        </button>
+                      </td>
+                    </tr>
+                  `
+              ).join("")
+            }
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
 
 
-    const ok =
-      r.filter(
-        x =>
-          x.estado ===
-          "OK"
-      ).length;
+  function renderResultadoConciliacion() {
+
+    if (!ultimaConciliacion) return;
 
 
-    const dif =
-      r.length - ok;
+    const resumen =
+      ultimaConciliacion.resumenTrabajadores
+      ||
+      resumenConciliacionPorTrabajador(
+        ultimaConciliacion.resultados || []
+      );
 
 
-    $("conResultado")
-      .innerHTML =
-        `
-          <div class="resumenKpi">
-
-            <div class="kpi">
-              <span>Comparaciones</span>
-              <strong>${r.length}</strong>
-            </div>
-
-            <div class="kpi">
-              <span>Coinciden</span>
-              <strong>${ok}</strong>
-            </div>
-
-            <div class="kpi">
-              <span>Diferencias</span>
-              <strong>${dif}</strong>
-            </div>
-
-            <div class="kpi">
-              <span>Período</span>
-              <strong style="font-size:16px">
-                ${MESES[ultimaConciliacion.mes]}
-                ${ultimaConciliacion.anio}
-              </strong>
-            </div>
-
-          </div>
+    ultimaConciliacion.resumenTrabajadores = resumen;
 
 
-          <div
-            class="acciones"
-            style="justify-content:flex-start"
-          >
-
-            <button
-              class="btn btnPrimario"
-              id="btnPdfCon"
-            >
-              Generar PDF
-            </button>
-
-          </div>
+    const conformes =
+      resumen.filter(x => x.estado === "Conforme");
 
 
-          <div class="tablaWrap">
+    const revisar =
+      resumen.filter(x => x.estado !== "Conforme");
 
-            <table class="tabla">
 
-              <thead>
+    const totalBonificacion =
+      resumen.reduce((a, x) => a + numero(x.bonificacion), 0);
 
-                <tr>
-                  <th>Trabajador</th>
-                  <th>Fecha</th>
-                  <th>Recargo</th>
-                  <th>Firebase</th>
-                  <th>SAP</th>
-                  <th>Diferencia</th>
-                  <th>Resultado</th>
-                </tr>
 
-              </thead>
+    const totalPagar =
+      resumen.reduce((a, x) => a + numero(x.pagar), 0);
 
-              <tbody>
 
-                ${
-                  r.map(
-                    x =>
-                      `
-                        <tr>
+    const totalSap =
+      resumen.reduce((a, x) => a + numero(x.sap), 0);
 
-                          <td>
-                            ${esc(x.nombre)}
-                          </td>
 
-                          <td>
-                            ${fechaCL(x.fecha)}
-                          </td>
+    $("conResultado").innerHTML =
+      `
+        <div class="notaReglaPago">
+          <b>Regla de horas mínimas:</b> ${esc(textoEstadoReglaPago())}
+          <br>
+          La conciliación compara <b>Horas a pagar</b> contra SAP. Las horas reales y la bonificación se mantienen visibles por separado.
+        </div>
 
-                          <td>
-                            ${x.recargo}%
-                          </td>
+        <div class="resumenKpi">
+          <div class="kpi"><span>Trabajadores</span><strong>${resumen.length}</strong></div>
+          <div class="kpi"><span>Conformes</span><strong>${conformes.length}</strong></div>
+          <div class="kpi"><span>Por revisar</span><strong>${revisar.length}</strong></div>
+          <div class="kpi"><span>Bonificación</span><strong>${vistaHoras(totalBonificacion)} h</strong></div>
+          <div class="kpi"><span>Horas a pagar</span><strong>${vistaHoras(totalPagar)} h</strong></div>
+          <div class="kpi"><span>Horas SAP</span><strong>${vistaHoras(totalSap)} h</strong></div>
+        </div>
 
-                          <td>
-                            ${vistaHoras(x.firebase)}
-                          </td>
+        <div class="acciones" style="justify-content:flex-start">
+          <button class="btn btnPrimario" id="btnPdfCon">Generar PDF</button>
+        </div>
 
-                          <td>
-                            ${vistaHoras(x.sap)}
-                          </td>
+        <div class="bloque">
+          <h3>1. Trabajadores conformes</h3>
+          <div class="nota">Registros donde las horas a pagar coinciden con SAP por N° de personal, fecha y recargo.</div>
+          <div style="margin-top:12px">${tablaResumenConciliacion(conformes)}</div>
+        </div>
 
-                          <td>
-                            ${vistaHoras(x.diferencia)}
-                          </td>
-
-                          <td>
-
-                            <span class="estado ${
-                              x.estado ===
-                              "OK"
-                                ?
-                                  "ok"
-                                :
-                                  "diferencia"
-                            }">
-                              ${esc(x.estado)}
-                            </span>
-
-                          </td>
-
-                        </tr>
-                      `
-                  )
-                  .join("")
-                }
-
-              </tbody>
-
-            </table>
-
-          </div>
-        `;
+        <div class="bloque">
+          <h3>2. Trabajadores con diferencias</h3>
+          <div class="nota">Casos que deben revisarse antes de autorizar el pago.</div>
+          <div style="margin-top:12px">${tablaResumenConciliacion(revisar)}</div>
+        </div>
+      `;
 
 
     $("btnPdfCon")
@@ -10432,53 +11601,39 @@
 
   async function renderConciliacion() {
 
-    $("contenidoModulo")
-      .innerHTML =
-        `
-          <div class="bloque">
+    $("contenidoModulo").innerHTML =
+      `
+        <div class="bloque">
 
-            <h3>
-              Conciliación Firebase vs SAP
-            </h3>
-
-            <div class="grid3">
-
-              ${selectPeriodo("con")}
-
-              <div>
-
-                <label>
-                  Excel SAP *
-                </label>
-
-                <input
-                  id="sapArchivo"
-                  type="file"
-                  accept=".xlsx,.xls,.csv"
-                >
-
-              </div>
-
+          <div class="concCabecera">
+            <div>
+              <h3>Conciliación BD.HE vs SAP</h3>
+              <p>
+                Se consideran únicamente solicitudes aprobadas.
+                El cruce se realiza por <b>N° de personal + fecha + recargo</b> y compara SAP contra las <b>Horas a pagar</b>.
+                Cuando un grupo aprobado es menor a ${vistaHoras(HORAS_MINIMAS_PAGO)} h, la diferencia se muestra como <b>bonificación por mínimo</b> al mismo recargo.
+              </p>
             </div>
-
-
-            <div
-              id="sapEstado"
-              class="mensaje mensajeInfo"
-              style="margin-top:14px"
-            >
-              Carga la exportación de SAP.
-              Después podrás indicar qué columna corresponde
-              a trabajador, fecha, recargo y horas.
-            </div>
-
           </div>
 
+          <div class="grid3">
+            ${selectPeriodo("con")}
 
-          <div id="sapMapeo"></div>
+            <div>
+              <label>Excel SAP *</label>
+              <input id="sapArchivo" type="file" accept=".xlsx,.xls,.csv">
+            </div>
+          </div>
 
-          <div id="conResultado"></div>
-        `;
+          <div id="sapEstado" class="mensaje mensajeInfo" style="margin-top:14px">
+            Selecciona el mismo período que corresponde al Excel SAP y carga el archivo.
+          </div>
+
+        </div>
+
+        <div id="sapMapeo"></div>
+        <div id="conResultado"></div>
+      `;
 
 
     $("sapArchivo")
@@ -10486,30 +11641,17 @@
         "change",
         async e => {
 
-          const f =
-            e.target.files?.[0];
-
-
-          if (!f) {
-            return;
-          }
+          const f = e.target.files?.[0];
+          if (!f) return;
 
 
           try {
 
-            const n =
-              await leerSap(f);
+            sapArchivoNombre = f.name || "";
+            const n = await leerSap(f);
 
-
-            $("sapEstado")
-              .className =
-                "mensaje mensajeExito";
-
-
-            $("sapEstado")
-              .textContent =
-                `Archivo leído: ${n} filas.`;
-
+            $("sapEstado").className = "mensaje mensajeExito";
+            $("sapEstado").textContent = `Archivo leído correctamente: ${n} filas. Verifica el período y luego concilia.`;
 
             renderMapeoSap();
 
@@ -10517,25 +11659,15 @@
           catch (err) {
 
             console.error(err);
-
-
-            $("sapEstado")
-              .className =
-                "mensaje mensajeError";
-
-
-            $("sapEstado")
-              .textContent =
-                "No se pudo leer el Excel SAP.";
+            sapArchivoNombre = "";
+            $("sapEstado").className = "mensaje mensajeError";
+            $("sapEstado").textContent = "No se pudo leer el Excel SAP.";
           }
         }
       );
 
 
-    if (
-      ultimaConciliacion
-    ) {
-
+    if (ultimaConciliacion) {
       renderResultadoConciliacion();
     }
   }
@@ -10547,30 +11679,21 @@
 
   function generarPdfConciliacion() {
 
-    if (
-      !ultimaConciliacion
-    ) {
+    if (!ultimaConciliacion) {
 
       try {
-
         ultimaConciliacion =
           JSON.parse(
-            sessionStorage.getItem(
-              "ultimaConciliacionHHEE"
-            )
+            sessionStorage.getItem("ultimaConciliacionHHEE")
             ||
             "null"
           );
-
       }
       catch {}
     }
 
 
-    if (
-      !ultimaConciliacion
-    ) {
-
+    if (!ultimaConciliacion) {
       return toast(
         "Primero realiza una conciliación SAP.",
         "error"
@@ -10578,10 +11701,7 @@
     }
 
 
-    if (
-      !window.jspdf?.jsPDF
-    ) {
-
+    if (!window.jspdf?.jsPDF) {
       return toast(
         "No se cargó jsPDF.",
         "error"
@@ -10589,184 +11709,314 @@
     }
 
 
-    const {
-      jsPDF
-    } =
-      window.jspdf;
-
+    const { jsPDF } = window.jspdf;
 
     const pdf =
       new jsPDF({
-        orientation:
-          "landscape",
-        unit:
-          "mm",
-        format:
-          "a4"
+        orientation: "landscape",
+        unit: "mm",
+        format: "a4"
       });
 
 
-    const r =
-      ultimaConciliacion.resultados;
-
-
-    const ok =
-      r.filter(
-        x =>
-          x.estado ===
-          "OK"
-      ).length;
-
-
-    const dif =
-      r.length - ok;
-
-
-    pdf.setFontSize(
-      16
-    );
-
-
-    pdf.text(
-      "Informe de conciliación de Horas Extras",
-      14,
-      16
-    );
-
-
-    pdf.setFontSize(
-      10
-    );
-
-
-    pdf.text(
-      `Período: ${MESES[ultimaConciliacion.mes]} ${ultimaConciliacion.anio}`,
-      14,
-      23
-    );
-
-
-    pdf.text(
-      `Generado por: ${ultimaConciliacion.generadoPor || ""}`,
-      14,
-      29
-    );
-
-
-    pdf.text(
-      `Comparaciones: ${r.length}  Coinciden: ${ok}  Diferencias: ${dif}`,
-      14,
-      35
-    );
-
-
-    pdf.text(
-      "Destinatario: Jefe de Administración",
-      14,
-      41
-    );
-
-
-    const body =
-      r.map(
-        x => [
-          x.nombre,
-          fechaCL(x.fecha),
-          `${x.recargo}%`,
-          vistaHoras(x.firebase),
-          vistaHoras(x.sap),
-          vistaHoras(x.diferencia),
-          x.estado
-        ]
+    const resumen =
+      ultimaConciliacion.resumenTrabajadores
+      ||
+      resumenConciliacionPorTrabajador(
+        ultimaConciliacion.resultados || []
       );
 
 
-    if (
-      typeof pdf.autoTable ===
-      "function"
-    ) {
+    const conformes =
+      resumen.filter(x => x.estado === "Conforme");
 
-      pdf.autoTable({
 
-        startY:
-          47,
+    const revisar =
+      resumen.filter(x => x.estado !== "Conforme");
 
-        head: [[
-          "Trabajador",
-          "Fecha",
-          "Recargo",
-          "Firebase",
-          "SAP",
-          "Diferencia",
-          "Resultado"
-        ]],
 
-        body,
+    const totalBonificacion =
+      red2(
+        resumen.reduce(
+          (a, x) => a + numero(x.bonificacion),
+          0
+        )
+      );
 
-        styles: {
-          fontSize:
-            8
-        },
 
-        headStyles: {
-          fillColor: [
-            0,
-            59,
-            113
-          ]
-        }
-      });
+    const totalPagar =
+      red2(
+        resumen.reduce(
+          (a, x) => a + numero(x.pagar),
+          0
+        )
+      );
 
+
+    const totalSap =
+      red2(
+        resumen.reduce(
+          (a, x) => a + numero(x.sap),
+          0
+        )
+      );
+
+
+    const azul = [0, 59, 113];
+    const gris = [86, 105, 125];
+    const borde = [215, 226, 234];
+
+
+    pdf.setTextColor(...azul);
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(22);
+    pdf.text("transelec", 14, 16);
+
+
+    pdf.setFontSize(15);
+    pdf.text(
+      "Informe de conciliación de horas extras",
+      283,
+      14,
+      { align: "right" }
+    );
+
+
+    pdf.setFont("helvetica", "normal");
+    pdf.setTextColor(...gris);
+    pdf.setFontSize(8);
+    pdf.text(
+      `Validación administrativa previa al pago · ${MESES[ultimaConciliacion.mes]} ${ultimaConciliacion.anio}`,
+      283,
+      19,
+      { align: "right" }
+    );
+
+
+    pdf.setDrawColor(...azul);
+    pdf.setLineWidth(.8);
+    pdf.line(14, 23, 283, 23);
+
+
+    pdf.setFillColor(247, 250, 252);
+    pdf.setDrawColor(...borde);
+    pdf.roundedRect(14, 27, 269, 10, 1.5, 1.5, "FD");
+
+    pdf.setTextColor(...gris);
+    pdf.setFontSize(7.5);
+    pdf.text(
+      `Fuente BD.HE: solicitudes aprobadas · Regla mínima: ${vistaHoras(HORAS_MINIMAS_PAGO)} h · SAP: ${ultimaConciliacion.archivoSap || "archivo cargado"} · Generado: ${new Date().toLocaleString("es-CL")}`,
+      17,
+      33
+    );
+
+
+    if (revisar.length) {
+      pdf.setFillColor(255, 247, 230);
+      pdf.setDrawColor(235, 190, 105);
+      pdf.roundedRect(14, 40, 269, 12, 1.5, 1.5, "FD");
+      pdf.setFont("helvetica", "bold");
+      pdf.setTextColor(132, 84, 0);
+      pdf.setFontSize(8);
+      pdf.text("Revisión administrativa requerida", 18, 45);
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(7);
+      pdf.text(
+        `${revisar.length} trabajador(es) presentan diferencias o incidencias y deben revisarse antes de autorizar el pago.`,
+        18,
+        49
+      );
     }
     else {
-
-      let y =
-        50;
-
-
-      body
-        .slice(
-          0,
-          25
-        )
-        .forEach(
-          row => {
-
-            pdf.text(
-              row.join(" | "),
-              14,
-              y
-            );
-
-
-            y += 6;
-          }
-        );
+      pdf.setFillColor(236, 249, 242);
+      pdf.setDrawColor(150, 210, 179);
+      pdf.roundedRect(14, 40, 269, 12, 1.5, 1.5, "FD");
+      pdf.setFont("helvetica", "bold");
+      pdf.setTextColor(24, 134, 91);
+      pdf.setFontSize(8);
+      pdf.text("Conciliación conforme", 18, 45);
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(7);
+      pdf.text("No se detectaron diferencias entre las horas a pagar y SAP.", 18, 49);
     }
 
 
-    const total =
+    const tarjetas = [
+      ["TRABAJADORES", String(resumen.length)],
+      ["CONFORMES", String(conformes.length)],
+      ["POR REVISAR", String(revisar.length)],
+      ["BONIFICACIÓN", vistaHoras(totalBonificacion)],
+      ["HORAS A PAGAR", vistaHoras(totalPagar)],
+      ["HORAS SAP", vistaHoras(totalSap)]
+    ];
+
+
+    const anchoTarjeta = 42.2;
+
+    tarjetas.forEach(
+      (t, i) => {
+        const x = 14 + i * 45.3;
+        pdf.setFillColor(249, 251, 253);
+        pdf.setDrawColor(...borde);
+        pdf.roundedRect(x, 56, anchoTarjeta, 16, 1.5, 1.5, "FD");
+        pdf.setTextColor(...gris);
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(6.5);
+        pdf.text(t[0], x + 3, 61);
+        pdf.setTextColor(...azul);
+        pdf.setFontSize(11);
+        pdf.text(t[1], x + 3, 68);
+      }
+    );
+
+
+    let yActual = 79;
+
+
+    const dibujarSeccion = (
+      titulo,
+      lista,
+      decision
+    ) => {
+
+      pdf.setTextColor(...azul);
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(9);
+      pdf.text(titulo, 14, yActual);
+      pdf.setFontSize(7);
+      pdf.text(
+        `${lista.length} trabajador(es)`,
+        283,
+        yActual,
+        { align: "right" }
+      );
+
+      yActual += 3;
+
+
+      const body =
+        lista.length
+          ?
+            lista.map(
+              x => [
+                x.numeroPersonal || "Sin N°",
+                x.nombre,
+                `${vistaHoras(x.registradas)} h`,
+                `${vistaHoras(x.bonificacion)} h`,
+                `${vistaHoras(x.pagar)} h`,
+                `${vistaHoras(x.sap)} h`,
+                `${vistaHoras(x.diferencia)} h`,
+                String(x.incidencias),
+                decision
+              ]
+            )
+          :
+            [["", "No se identificaron trabajadores en esta sección.", "", "", "", "", "", "", ""]];
+
+
+      if (typeof pdf.autoTable === "function") {
+
+        pdf.autoTable({
+          startY: yActual,
+          margin: { left: 14, right: 14 },
+          head: [[
+            "N° personal",
+            "Trabajador",
+            "Registradas",
+            "Bonificación",
+            "Horas a pagar",
+            "SAP",
+            "Diferencia",
+            "Inc.",
+            "Decisión"
+          ]],
+          body,
+          theme: "grid",
+          styles: {
+            fontSize: 6.4,
+            cellPadding: 1.6,
+            lineColor: borde,
+            lineWidth: .2,
+            textColor: [47, 63, 82]
+          },
+          headStyles: {
+            fillColor: [238, 245, 249],
+            textColor: azul,
+            fontStyle: "bold"
+          },
+          columnStyles: {
+            0: { cellWidth: 22 },
+            1: { cellWidth: 48 },
+            2: { cellWidth: 23, halign: "right" },
+            3: { cellWidth: 25, halign: "right" },
+            4: { cellWidth: 27, halign: "right" },
+            5: { cellWidth: 22, halign: "right" },
+            6: { cellWidth: 25, halign: "right" },
+            7: { cellWidth: 12, halign: "center" },
+            8: { cellWidth: 25, halign: "center", fontStyle: "bold" }
+          },
+          didParseCell(data) {
+            if (
+              data.section === "body"
+              &&
+              data.column.index === 8
+              &&
+              decision === "REVISAR"
+            ) {
+              data.cell.styles.textColor = [138, 91, 0];
+            }
+          }
+        });
+
+        yActual = (pdf.lastAutoTable?.finalY || yActual) + 9;
+      }
+    };
+
+
+    dibujarSeccion(
+      "1. Trabajadores conformes",
+      conformes,
+      "CONFORME"
+    );
+
+
+    dibujarSeccion(
+      "2. Trabajadores con diferencias",
+      revisar,
+      "REVISAR"
+    );
+
+
+    {
+      const yNota = Math.min(
+        (pdf.lastAutoTable?.finalY || 175) + 7,
+        193
+      );
+      pdf.setTextColor(132, 84, 0);
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(6.5);
+      pdf.text(
+        `Regla de horas mínimas: si un trabajador registra menos de ${vistaHoras(HORAS_MINIMAS_PAGO)} h aprobadas para una misma fecha y recargo, se completa la diferencia como bonificación al mismo recargo.`,
+        14,
+        yNota
+      );
+    }
+
+
+    const totalPaginas =
       pdf.getNumberOfPages();
 
 
-    for (
-      let i = 1;
-      i <= total;
-      i++
-    ) {
-
+    for (let i = 1; i <= totalPaginas; i++) {
       pdf.setPage(i);
-
-
-      pdf.setFontSize(
-        8
-      );
-
-
+      pdf.setTextColor(...gris);
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(6.5);
       pdf.text(
-        `Página ${i} de ${total}`,
-        260,
-        200
+        `Página ${i} de ${totalPaginas}`,
+        283,
+        203,
+        { align: "right" }
       );
     }
 
@@ -10785,146 +12035,71 @@
 
   function renderInformePdf() {
 
-    if (
-      !ultimaConciliacion
-    ) {
+    if (!ultimaConciliacion) {
 
       try {
-
         ultimaConciliacion =
           JSON.parse(
-            sessionStorage.getItem(
-              "ultimaConciliacionHHEE"
-            )
+            sessionStorage.getItem("ultimaConciliacionHHEE")
             ||
             "null"
           );
-
       }
       catch {}
     }
 
 
-    if (
-      !ultimaConciliacion
-    ) {
+    if (!ultimaConciliacion) {
 
-      $("contenidoModulo")
-        .innerHTML =
-          `
-            <div class="mensaje mensajeAviso">
+      $("contenidoModulo").innerHTML =
+        `
+          <div class="mensaje mensajeAviso">
+            Todavía no hay una conciliación cargada en esta sesión.
+            Ve a <b>Conciliación SAP</b>, realiza el cruce y genera el PDF desde esa misma pestaña.
+          </div>
 
-              Todavía no hay una conciliación cargada en esta sesión.
-
-              Ve a
-
-              <b>
-                Conciliación SAP
-              </b>,
-
-              realiza el cruce y vuelve aquí para generar el PDF.
-
-            </div>
+          <div class="acciones" style="justify-content:flex-start">
+            <button class="btn btnPrimario" id="irConc">Ir a Conciliación SAP</button>
+          </div>
+        `;
 
 
-            <div
-              class="acciones"
-              style="justify-content:flex-start"
-            >
-
-              <button
-                class="btn btnPrimario"
-                id="irConc"
-              >
-                Ir a Conciliación SAP
-              </button>
-
-            </div>
-          `;
-
-
-      $("irConc")
-        .addEventListener(
-          "click",
-          () =>
-            abrirModulo(
-              "conciliacion"
-            )
-        );
-
+      $("irConc").addEventListener(
+        "click",
+        () => abrirModulo("conciliacion")
+      );
 
       return;
     }
 
 
-    const r =
-      ultimaConciliacion.resultados;
-
-
-    $("contenidoModulo")
-      .innerHTML =
-        `
-          <div class="resumenKpi">
-
-            <div class="kpi">
-              <span>Período</span>
-              <strong style="font-size:16px">
-                ${MESES[ultimaConciliacion.mes]}
-                ${ultimaConciliacion.anio}
-              </strong>
-            </div>
-
-            <div class="kpi">
-              <span>Comparaciones</span>
-              <strong>${r.length}</strong>
-            </div>
-
-            <div class="kpi">
-              <span>Coinciden</span>
-              <strong>${
-                r.filter(
-                  x =>
-                    x.estado ===
-                    "OK"
-                ).length
-              }</strong>
-            </div>
-
-            <div class="kpi">
-              <span>Diferencias</span>
-              <strong>${
-                r.filter(
-                  x =>
-                    x.estado !==
-                    "OK"
-                ).length
-              }</strong>
-            </div>
-
-          </div>
-
-
-          <div
-            class="acciones"
-            style="justify-content:flex-start"
-          >
-
-            <button
-              class="btn btnPrimario"
-              id="generarPdfFinal"
-            >
-              Generar informe PDF
-            </button>
-
-          </div>
-        `;
-
-
-    $("generarPdfFinal")
-      .addEventListener(
-        "click",
-        generarPdfConciliacion
+    const resumen =
+      ultimaConciliacion.resumenTrabajadores
+      ||
+      resumenConciliacionPorTrabajador(
+        ultimaConciliacion.resultados || []
       );
+
+
+    $("contenidoModulo").innerHTML =
+      `
+        <div class="resumenKpi">
+          <div class="kpi"><span>Período</span><strong style="font-size:16px">${MESES[ultimaConciliacion.mes]} ${ultimaConciliacion.anio}</strong></div>
+          <div class="kpi"><span>Trabajadores</span><strong>${resumen.length}</strong></div>
+          <div class="kpi"><span>Conformes</span><strong>${resumen.filter(x => x.estado === "Conforme").length}</strong></div>
+          <div class="kpi"><span>Por revisar</span><strong>${resumen.filter(x => x.estado !== "Conforme").length}</strong></div>
+        </div>
+
+        <div class="acciones" style="justify-content:flex-start">
+          <button class="btn btnPrimario" id="generarPdfFinal">Generar informe PDF</button>
+        </div>
+      `;
+
+
+    $("generarPdfFinal").addEventListener(
+      "click",
+      generarPdfConciliacion
+    );
   }
 
 
@@ -10933,6 +12108,46 @@
   ========================================================= */
 
   async function abrirModulo(clave) {
+
+    const modulosAdmin =
+      new Set([
+        "resumenAdmin",
+        "todasSolicitudes",
+        "horasPagar",
+        "conciliacion",
+        "exportar",
+        "usuarios",
+        "informePdf"
+      ]);
+
+
+    const esModuloAdmin =
+      modulosAdmin.has(clave)
+      &&
+      esAdmin();
+
+
+    document
+      .querySelector(".contenedor")
+      ?.classList
+      .toggle(
+        "adminModuloActivo",
+        esModuloAdmin
+      );
+
+
+    document
+      .querySelectorAll(".adminTab")
+      .forEach(
+        tab =>
+          tab.classList.toggle(
+            "activa",
+            esModuloAdmin
+            &&
+            tab.dataset.modulo === clave
+          )
+      );
+
 
     $("panelModulo")
       .classList
@@ -10982,9 +12197,19 @@
         "Solicitudes aprobadas o rechazadas."
       ],
 
+      resumenAdmin: [
+        "Resumen",
+        "Indicadores generales de solicitudes y horas aprobadas."
+      ],
+
       todasSolicitudes: [
-        "Todas las solicitudes",
-        "Vista administrativa general."
+        "Solicitudes",
+        "Vista administrativa general de todas las áreas y estados."
+      ],
+
+      horasPagar: [
+        "Horas a pagar",
+        "Solicitudes aprobadas por supervisor y cálculo por recargo."
       ],
 
       usuarios: [
@@ -10994,12 +12219,12 @@
 
       exportar: [
         "Exportar solicitudes",
-        "Respaldo mensual en Excel."
+        "Descarga un rango de meses en un solo Excel."
       ],
 
       conciliacion: [
         "Conciliación SAP",
-        "Cruce de horas aprobadas contra la exportación SAP."
+        "Cruce por N° de personal, fecha y recargo antes del pago."
       ],
 
       informePdf: [
@@ -11097,10 +12322,26 @@
       }
       else if (
         clave ===
+        "resumenAdmin"
+      ) {
+
+        await renderResumenAdmin();
+
+      }
+      else if (
+        clave ===
         "todasSolicitudes"
       ) {
 
         await renderTodasSolicitudes();
+
+      }
+      else if (
+        clave ===
+        "horasPagar"
+      ) {
+
+        await renderHorasPagar();
 
       }
       else if (
@@ -11159,13 +12400,23 @@
     }
 
 
-    $("panelModulo")
-      .scrollIntoView({
-        behavior:
-          "smooth",
-        block:
-          "start"
-      });
+    if (esModuloAdmin) {
+
+      $("barraAdminTabs")
+        ?.scrollIntoView({
+          behavior: "smooth",
+          block: "start"
+        });
+
+    }
+    else {
+
+      $("panelModulo")
+        .scrollIntoView({
+          behavior: "smooth",
+          block: "start"
+        });
+    }
   }
 
 
@@ -11190,6 +12441,25 @@
 
 
   function cerrarPanel() {
+
+    document
+      .querySelector(".contenedor")
+      ?.classList
+      .remove("adminModuloActivo");
+
+
+    document
+      .querySelectorAll(".adminTab")
+      .forEach(
+        tab =>
+          tab.classList.remove("activa")
+      );
+
+
+    if (esAdmin()) {
+      $("introAdmin")?.classList.remove("hidden");
+    }
+
 
     $("panelModulo")
       .classList
