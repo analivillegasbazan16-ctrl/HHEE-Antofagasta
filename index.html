@@ -514,6 +514,385 @@
       .periodoGrupo{grid-template-columns:1fr 1fr}
       .adminIntro{align-items:flex-start;flex-direction:column}
     }
+  
+
+    /* =========================================================
+       REDISEÑO UX / NAVEGACIÓN POR ESPACIOS
+       Mantiene toda la lógica existente y mejora la experiencia.
+    ========================================================= */
+
+    .contenedor{
+      width:min(1460px,calc(100% - 40px));
+      margin:22px auto 54px;
+    }
+
+    .perfil{
+      display:grid;
+      grid-template-columns:minmax(0,1fr) minmax(330px,420px);
+      grid-template-areas:
+        "saludo notif"
+        "sub notif"
+        "badges notif"
+        "datos datos";
+      column-gap:24px;
+      row-gap:3px;
+      padding:19px 22px;
+      background:linear-gradient(135deg,#ffffff 0%,#f3f9fd 100%);
+    }
+
+    .perfil h2{
+      grid-area:saludo;
+      margin:0;
+      font-size:25px;
+      line-height:1.2;
+    }
+
+    .perfil>p{
+      grid-area:sub;
+      margin:2px 0 0;
+      font-size:13px;
+    }
+
+    .perfil .badges{
+      grid-area:badges;
+      margin-top:7px;
+    }
+
+    .perfil .notifBar{
+      grid-area:notif;
+      align-self:center;
+      margin:0;
+      min-width:0;
+      padding:10px 11px;
+      border-color:#d7e4ed;
+      box-shadow:0 3px 10px rgba(0,59,113,.035);
+    }
+
+    .perfil .notifIcon{
+      width:34px;
+      height:34px;
+      border-radius:9px;
+      font-size:17px;
+    }
+
+    .perfil .notifTexto strong{font-size:12px}
+    .perfil .notifTexto span{font-size:10.5px}
+    .perfil .btnNotif{padding:8px 10px;font-size:11px}
+
+    .perfilDatos{
+      grid-area:datos;
+      display:grid;
+      grid-template-columns:.9fr .9fr 1fr 1.35fr;
+      gap:0;
+      margin-top:12px;
+      overflow:hidden;
+      border:1px solid var(--borde);
+      border-radius:12px;
+      background:#fff;
+    }
+
+    .perfilDato{
+      min-width:0;
+      padding:10px 14px;
+      border:0;
+      border-right:1px solid var(--borde);
+      border-radius:0;
+      background:#fff;
+    }
+
+    .perfilDato:last-child{border-right:0}
+    .perfilDato span{font-size:9.5px;margin-bottom:3px}
+    .perfilDato strong{display:block;overflow-wrap:anywhere;font-size:13px}
+
+    .portalNav{
+      position:sticky;
+      top:78px;
+      z-index:95;
+      margin-top:16px;
+      overflow:hidden;
+      border:1px solid #d7e3eb;
+      border-radius:16px;
+      background:#fff;
+      box-shadow:0 8px 24px rgba(0,59,113,.075);
+    }
+
+    .portalNavTop{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      min-height:48px;
+      padding:7px 10px;
+      border-bottom:1px solid #e5edf3;
+      background:#f7fafc;
+    }
+
+    .roleTabs{
+      display:flex;
+      align-items:center;
+      gap:7px;
+      min-width:0;
+      overflow-x:auto;
+      scrollbar-width:thin;
+    }
+
+    .roleTab{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      flex:0 0 auto;
+      padding:9px 13px;
+      border:1px solid transparent;
+      border-radius:10px;
+      background:transparent;
+      color:#4d6176;
+      font-size:12.5px;
+      font-weight:800;
+      white-space:nowrap;
+    }
+
+    .roleTab:hover{
+      border-color:#d4e3ed;
+      background:#fff;
+      color:var(--azul);
+    }
+
+    .roleTab.activa{
+      border-color:var(--azul);
+      background:var(--azul);
+      color:#fff;
+      box-shadow:0 4px 12px rgba(0,59,113,.16);
+    }
+
+    .roleIcon{
+      display:grid;
+      place-items:center;
+      width:22px;
+      height:22px;
+      border-radius:7px;
+      background:rgba(0,59,113,.08);
+      font-size:12px;
+      font-weight:900;
+    }
+
+    .roleTab.activa .roleIcon{background:rgba(255,255,255,.17)}
+
+    .portalContexto{
+      flex:0 1 420px;
+      color:#66778a;
+      font-size:11.5px;
+      line-height:1.35;
+      text-align:right;
+    }
+
+    .portalNav .adminTabs{
+      position:static!important;
+      top:auto!important;
+      z-index:auto!important;
+      display:flex;
+      align-items:center;
+      gap:5px;
+      margin:0!important;
+      padding:8px 10px!important;
+      overflow-x:auto;
+      border:0!important;
+      border-radius:0!important;
+      background:#fff!important;
+      box-shadow:none!important;
+    }
+
+    .portalNav .adminTab{
+      display:inline-flex;
+      align-items:center;
+      gap:7px;
+      padding:9px 11px;
+      border:1px solid transparent;
+      border-radius:9px;
+      color:#52657a;
+      font-size:12px;
+      font-weight:750;
+    }
+
+    .portalNav .adminTab:hover{
+      border-color:#d8e6ef;
+      background:#f5f9fc;
+      color:var(--azul);
+    }
+
+    .portalNav .adminTab.activa{
+      border-color:#bfd7e7!important;
+      background:var(--azulClaro)!important;
+      color:var(--azul)!important;
+      box-shadow:none!important;
+    }
+
+    .subNavIcon{
+      width:19px;
+      text-align:center;
+      color:#6c8194;
+      font-weight:900;
+    }
+
+    .adminTab.activa .subNavIcon{color:var(--azul)}
+
+    #introAdmin{display:none!important}
+
+    #panelModulo{
+      margin-top:14px;
+      padding:0;
+      overflow:hidden;
+      border-radius:16px;
+      box-shadow:0 8px 26px rgba(0,59,113,.065);
+    }
+
+    .panelHead{
+      align-items:center;
+      margin:0;
+      padding:18px 22px;
+      border-bottom:1px solid #e3ebf1;
+      background:linear-gradient(180deg,#fff,#fbfdff);
+    }
+
+    .panelHead h2{
+      margin:0 0 4px;
+      font-size:22px;
+      line-height:1.2;
+    }
+
+    .panelHead p{font-size:12.5px;line-height:1.4}
+
+    #contenidoModulo{padding:20px 22px 26px}
+
+    .bloque{
+      padding:17px;
+      border-color:#dce6ed;
+      border-radius:12px;
+      background:#fff;
+      box-shadow:0 2px 8px rgba(0,59,113,.025);
+    }
+
+    .bloque h3{font-size:16px}
+
+    .resumenKpi{gap:12px;margin:4px 0 16px}
+    .kpi{padding:14px 15px;border-radius:12px;background:#fbfdff}
+    .kpi span{font-size:9.5px;letter-spacing:.02em}
+    .kpi strong{font-size:22px}
+
+    .tablaWrap{
+      border-color:#dbe5ec;
+      border-radius:12px;
+    }
+
+    .tabla th,.tabla td{
+      padding:10px 11px;
+      font-size:12.2px;
+      line-height:1.35;
+    }
+
+    .tabla th{
+      background:#f2f7fa;
+      color:#40566b;
+      font-size:10.5px;
+      text-transform:uppercase;
+      letter-spacing:.015em;
+    }
+
+    .btn{transition:transform .12s ease,box-shadow .12s ease,background .12s ease}
+    .btn:not(:disabled):active{transform:translateY(1px)}
+
+    .permanenciaAsignaciones{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:12px;
+      margin-top:14px;
+    }
+
+    .permanenciaCard{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      min-height:82px;
+      padding:14px;
+      border:1px solid #dce6ed;
+      border-radius:13px;
+      background:#fff;
+      box-shadow:0 3px 10px rgba(0,59,113,.035);
+    }
+
+    .permanenciaCardIcon{
+      display:grid;
+      place-items:center;
+      flex:0 0 40px;
+      width:40px;
+      height:40px;
+      border-radius:11px;
+      background:var(--azulClaro);
+      color:var(--azul);
+      font-size:11px;
+      font-weight:900;
+      letter-spacing:.02em;
+    }
+
+    .permanenciaCardTexto{min-width:0}
+    .permanenciaCardTexto span{
+      display:block;
+      margin-bottom:4px;
+      color:#718196;
+      font-size:9.5px;
+      font-weight:800;
+      text-transform:uppercase;
+    }
+
+    .permanenciaCardTexto strong{
+      display:block;
+      overflow-wrap:anywhere;
+      color:#172033;
+      font-size:14px;
+      line-height:1.3;
+    }
+
+    .permanenciaCard.sinAsignacion{background:#fafcfd}
+    .permanenciaCard.sinAsignacion strong{color:#94a3b8;font-style:italic;font-weight:650}
+
+    @media(max-width:1050px){
+      .perfil{grid-template-columns:1fr;grid-template-areas:"saludo" "sub" "badges" "notif" "datos"}
+      .perfil .notifBar{margin-top:9px}
+      .perfilDatos{grid-template-columns:repeat(2,1fr)}
+      .perfilDato:nth-child(2){border-right:0}
+      .perfilDato:nth-child(-n+2){border-bottom:1px solid var(--borde)}
+      .permanenciaAsignaciones{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .portalContexto{display:none}
+    }
+
+    @media(max-width:820px){
+      .contenedor{width:calc(100% - 20px);margin-top:14px}
+      .perfil{display:block;padding:17px}
+      .perfil h2{font-size:23px}
+      .perfil .badges{margin-top:10px}
+      .perfil .notifBar{margin-top:12px}
+      .perfilDatos{grid-template-columns:1fr 1fr;margin-top:12px}
+      .perfilDato{border-right:1px solid var(--borde)}
+      .perfilDato:nth-child(2n){border-right:0}
+      .perfilDato:nth-child(-n+2){border-bottom:1px solid var(--borde)}
+      .portalNav{top:66px;margin-top:12px;border-radius:13px}
+      .portalNavTop{display:block;padding:7px}
+      .roleTabs{width:100%}
+      .roleTab{padding:9px 11px}
+      .portalNav .adminTabs{padding:7px!important}
+      .portalNav .adminTab{padding:8px 10px;font-size:11.5px}
+      #contenidoModulo{padding:16px}
+      .panelHead{padding:16px}
+      .panelHead h2{font-size:20px}
+      .permanenciaAsignaciones{grid-template-columns:1fr}
+    }
+
+    @media(max-width:520px){
+      .perfilDatos{grid-template-columns:1fr}
+      .perfilDato{border-right:0!important;border-bottom:1px solid var(--borde)!important}
+      .perfilDato:last-child{border-bottom:0!important}
+      .roleTab .roleTexto{display:inline}
+    }
+
   </style>
 </head>
 
@@ -694,14 +1073,18 @@
 
       </section>
 
-      <nav id="barraAdminTabs" class="adminTabs hidden" aria-label="Módulos del portal"></nav>
+      <section id="navegacionPortal" class="portalNav hidden" aria-label="Navegación del portal">
 
-      <div id="introAdmin" class="adminIntro hidden">
-        <div>
-          <strong>Menú de módulos</strong>
-          <span>Selecciona una pestaña para trabajar sin desplazarte por una página larga.</span>
+        <div class="portalNavTop">
+          <div id="barraRoles" class="roleTabs" aria-label="Espacios de trabajo"></div>
+          <div id="portalContexto" class="portalContexto"></div>
         </div>
-      </div>
+
+        <nav id="barraAdminTabs" class="adminTabs" aria-label="Opciones del espacio seleccionado"></nav>
+
+      </section>
+
+      <div id="introAdmin" class="adminIntro hidden"></div>
 
 
       <section id="seccionTrabajador" class="seccion hidden">
@@ -1077,53 +1460,101 @@
       perfilActual?.puedeSolicitarHE === true;
 
 
-  function opcionesNavegacionActual() {
+  let grupoNavegacionActivo = "";
 
-    const opciones = [];
+
+  function gruposNavegacionActual() {
+
+    const grupos = [];
 
 
     if (puedeSolicitar()) {
-      opciones.push(
-        ["ingresarHhee", "Ingresar HHEE"],
-        ["misSolicitudes", "Mis solicitudes"],
-        ["misHoras", "Mis horas"]
-      );
+      grupos.push({
+        clave: "trabajador",
+        etiqueta: "Mis HHEE",
+        icono: "⏱",
+        contexto: "Registra tus horas extras y revisa el estado de tus solicitudes.",
+        opciones: [
+          { clave: "ingresarHhee", etiqueta: "Ingresar HHEE", icono: "+" },
+          { clave: "misSolicitudes", etiqueta: "Mis solicitudes", icono: "≡" },
+          { clave: "misHoras", etiqueta: "Mis horas", icono: "◷" },
+          { clave: "permanencia", etiqueta: "Permanencia", icono: "P" }
+        ]
+      });
     }
 
 
     if (esSupervisor()) {
-      opciones.push(
-        ["pendientesSupervisor", "Pendientes por aprobar"],
-        ["historialSupervisor", "Historial"]
-      );
+      grupos.push({
+        clave: "supervision",
+        etiqueta: "Supervisión",
+        icono: "✓",
+        contexto: "Revisa las solicitudes de tu equipo y consulta la permanencia vigente.",
+        opciones: [
+          { clave: "pendientesSupervisor", etiqueta: "Pendientes por aprobar", icono: "!" },
+          { clave: "historialSupervisor", etiqueta: "Historial", icono: "↺" },
+          { clave: "permanencia", etiqueta: "Permanencia", icono: "P" }
+        ]
+      });
     }
 
 
     if (esAdmin()) {
-      opciones.push(
-        ["resumenAdmin", "Resumen"],
-        ["todasSolicitudes", "Solicitudes"],
-        ["horasPagar", "Horas a pagar"],
-        ["permanencia", "Permanencia"],
-        ["conciliacion", "Conciliación SAP"],
-        ["exportar", "Exportar"],
-        ["usuarios", "Usuarios"]
-      );
-    }
-    else {
-      opciones.push(["permanencia", "Permanencia"]);
+      grupos.push({
+        clave: "administracion",
+        etiqueta: "Administración",
+        icono: "⚙",
+        contexto: "Control de solicitudes, horas a pagar, SAP, permanencia y usuarios.",
+        opciones: [
+          { clave: "resumenAdmin", etiqueta: "Resumen", icono: "▦" },
+          { clave: "todasSolicitudes", etiqueta: "Solicitudes", icono: "≡" },
+          { clave: "horasPagar", etiqueta: "Horas a pagar", icono: "$" },
+          { clave: "permanencia", etiqueta: "Permanencia", icono: "P" },
+          { clave: "conciliacion", etiqueta: "Conciliación SAP", icono: "⇄" },
+          { clave: "exportar", etiqueta: "Exportar", icono: "⇩" },
+          { clave: "usuarios", etiqueta: "Usuarios", icono: "U" }
+        ]
+      });
     }
 
+
+    if (!grupos.length) {
+      grupos.push({
+        clave: "consulta",
+        etiqueta: "Consulta",
+        icono: "P",
+        contexto: "Consulta la programación de permanencia.",
+        opciones: [
+          { clave: "permanencia", etiqueta: "Permanencia", icono: "P" }
+        ]
+      });
+    }
+
+
+    return grupos;
+  }
+
+
+  function opcionesNavegacionActual() {
 
     const vistas = new Set();
+    const opciones = [];
 
-    return opciones.filter(
-      ([clave]) => {
-        if (vistas.has(clave)) return false;
-        vistas.add(clave);
-        return true;
-      }
-    );
+
+    gruposNavegacionActual()
+      .forEach(
+        grupo =>
+          grupo.opciones.forEach(
+            opcion => {
+              if (vistas.has(opcion.clave)) return;
+              vistas.add(opcion.clave);
+              opciones.push([opcion.clave, opcion.etiqueta]);
+            }
+          )
+      );
+
+
+    return opciones;
   }
 
 
@@ -1136,30 +1567,79 @@
   }
 
 
-  function configurarNavegacionPorRoles() {
+  function grupoInicialPorRol() {
 
-    const barra = $("barraAdminTabs");
+    if (esAdmin()) return "administracion";
+    if (esSupervisor()) return "supervision";
+    if (puedeSolicitar()) return "trabajador";
+    return "consulta";
+  }
+
+
+  function pintarGrupoNavegacion(claveGrupo) {
+
+    const grupos =
+      gruposNavegacionActual();
+
+
+    const grupo =
+      grupos.find(
+        g => g.clave === claveGrupo
+      )
+      ||
+      grupos[0];
+
+
+    if (!grupo) return;
+
+
+    grupoNavegacionActivo =
+      grupo.clave;
+
+
+    document
+      .querySelectorAll(".roleTab")
+      .forEach(
+        boton =>
+          boton.classList.toggle(
+            "activa",
+            boton.dataset.grupo === grupo.clave
+          )
+      );
+
+
+    const contexto =
+      $("portalContexto");
+
+
+    if (contexto) {
+      contexto.textContent =
+        grupo.contexto || "";
+    }
+
+
+    const barra =
+      $("barraAdminTabs");
+
 
     if (!barra) return;
 
 
-    const opciones =
-      opcionesNavegacionActual();
-
-
     barra.innerHTML =
-      opciones
+      grupo.opciones
         .map(
-          ([clave, etiqueta]) =>
-            `<button class="adminTab" type="button" data-modulo="${esc(clave)}">${esc(etiqueta)}</button>`
+          opcion => `
+            <button
+              class="adminTab"
+              type="button"
+              data-modulo="${esc(opcion.clave)}"
+            >
+              <span class="subNavIcon">${esc(opcion.icono || "•")}</span>
+              <span>${esc(opcion.etiqueta)}</span>
+            </button>
+          `
         )
         .join("");
-
-
-    barra.classList.toggle(
-      "hidden",
-      !opciones.length
-    );
 
 
     barra
@@ -1171,14 +1651,180 @@
             () => abrirModulo(boton.dataset.modulo)
           )
       );
+  }
+
+
+  function sincronizarNavegacionConModulo(claveModulo) {
+
+    const grupos =
+      gruposNavegacionActual();
+
+
+    let grupo =
+      grupos.find(
+        g =>
+          g.clave === grupoNavegacionActivo
+          &&
+          g.opciones.some(
+            opcion => opcion.clave === claveModulo
+          )
+      );
+
+
+    if (!grupo) {
+      grupo =
+        grupos.find(
+          g =>
+            g.opciones.some(
+              opcion => opcion.clave === claveModulo
+            )
+        );
+    }
+
+
+    if (grupo) {
+
+      if (
+        grupo.clave !== grupoNavegacionActivo
+        ||
+        !$("barraAdminTabs")?.querySelector(`[data-modulo="${claveModulo}"]`)
+      ) {
+        pintarGrupoNavegacion(
+          grupo.clave
+        );
+      }
+
+
+      document
+        .querySelectorAll(".roleTab")
+        .forEach(
+          boton =>
+            boton.classList.toggle(
+              "activa",
+              boton.dataset.grupo === grupo.clave
+            )
+        );
+    }
+
+
+    document
+      .querySelectorAll(".adminTab")
+      .forEach(
+        boton =>
+          boton.classList.toggle(
+            "activa",
+            boton.dataset.modulo === claveModulo
+          )
+      );
+  }
+
+
+  function configurarNavegacionPorRoles() {
+
+    const portal =
+      $("navegacionPortal");
+
+    const barraRoles =
+      $("barraRoles");
+
+
+    if (
+      !portal
+      ||
+      !barraRoles
+    ) return;
+
+
+    const grupos =
+      gruposNavegacionActual();
+
+
+    barraRoles.innerHTML =
+      grupos
+        .map(
+          grupo => `
+            <button
+              class="roleTab"
+              type="button"
+              data-grupo="${esc(grupo.clave)}"
+            >
+              <span class="roleIcon">${esc(grupo.icono || "•")}</span>
+              <span class="roleTexto">${esc(grupo.etiqueta)}</span>
+            </button>
+          `
+        )
+        .join("");
+
+
+    portal.classList.toggle(
+      "hidden",
+      !grupos.length
+    );
+
+
+    document
+      .querySelector(".contenedor")
+      ?.classList
+      .toggle(
+        "portalNavegacionActiva",
+        Boolean(grupos.length)
+      );
+
+
+    barraRoles
+      .querySelectorAll(".roleTab")
+      .forEach(
+        boton =>
+          boton.addEventListener(
+            "click",
+            async () => {
+
+              const clave =
+                boton.dataset.grupo;
+
+
+              const grupo =
+                gruposNavegacionActual()
+                  .find(
+                    g => g.clave === clave
+                  );
+
+
+              pintarGrupoNavegacion(
+                clave
+              );
+
+
+              const primero =
+                grupo?.opciones?.[0]?.clave;
+
+
+              if (primero) {
+                await abrirModulo(
+                  primero
+                );
+              }
+            }
+          )
+      );
+
+
+    const grupoInicial =
+      grupos.some(
+        g => g.clave === grupoNavegacionActivo
+      )
+        ? grupoNavegacionActivo
+        : grupoInicialPorRol();
+
+
+    pintarGrupoNavegacion(
+      grupoInicial
+    );
 
 
     $("introAdmin")
       ?.classList
-      .toggle(
-        "hidden",
-        !opciones.length
-      );
+      .add("hidden");
   }
 
 
@@ -8664,59 +9310,62 @@
       {};
 
 
+    const abreviaturas = {
+      arica: "AR",
+      iquique: "IQ",
+      lagunas: "LG",
+      antofagasta: "AN",
+      encuentro: "EN",
+      jefePermanencia: "JP",
+      operaciones: "OP"
+    };
+
+
     return `
       <div class="permanenciaHero">
         <div class="permanenciaPeriodo">
-          <span>Fecha de referencia</span>
+          <span>Fin de semana seleccionado</span>
           <strong>Domingo ${fechaCL(p.fechaDomingo)}</strong>
           <small>${esc(periodo.texto)}</small>
         </div>
 
         <div class="permanenciaPeriodo">
-          <span>Regla de la aplicación</span>
+          <span>Ventana de permanencia</span>
           <strong>Viernes 14:30 → lunes 07:59</strong>
-          <small>La fecha del domingo identifica el fin de semana completo de permanencia.</small>
+          <small>El domingo se utiliza solamente como fecha de referencia del turno.</small>
         </div>
       </div>
 
-      <div class="tablaWrap">
-        <table class="tabla permanenciaTabla">
-          <thead>
-            <tr>
-              <th>Ubicación / función</th>
-              <th>Persona de permanencia</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${
-              CAMPOS_PERMANENCIA
-                .map(
-                  campo => {
-                    const persona =
-                      String(
-                        asignaciones[campo.clave]
-                        ||
-                        ""
-                      ).trim();
+      <div class="permanenciaAsignaciones">
+        ${
+          CAMPOS_PERMANENCIA
+            .map(
+              campo => {
 
-                    return `
-                      <tr>
-                        <td>${esc(campo.etiqueta)}</td>
-                        <td>
-                          ${
-                            persona
-                              ? `<span class="permanenciaPersona">${esc(persona)}</span>`
-                              : `<span class="permanenciaVacia">Sin asignación</span>`
-                          }
-                        </td>
-                      </tr>
-                    `;
-                  }
-                )
-                .join("")
-            }
-          </tbody>
-        </table>
+                const persona =
+                  String(
+                    asignaciones[campo.clave]
+                    ||
+                    ""
+                  ).trim();
+
+
+                return `
+                  <div class="permanenciaCard ${persona ? "" : "sinAsignacion"}">
+                    <div class="permanenciaCardIcon">
+                      ${esc(abreviaturas[campo.clave] || "P")}
+                    </div>
+
+                    <div class="permanenciaCardTexto">
+                      <span>${esc(campo.etiqueta)}</span>
+                      <strong>${persona ? esc(persona) : "Sin asignación"}</strong>
+                    </div>
+                  </div>
+                `;
+              }
+            )
+            .join("")
+        }
       </div>
     `;
   }
@@ -13559,6 +14208,11 @@
       esAdmin();
 
 
+    sincronizarNavegacionConModulo(
+      clave
+    );
+
+
     document
       .querySelector(".contenedor")
       ?.classList
@@ -13856,26 +14510,26 @@
     }
 
 
-    if (
-      $("barraAdminTabs")
-      &&
-      !$("barraAdminTabs").classList.contains("hidden")
-    ) {
+    const panelVisible =
+      $("panelModulo");
 
-      $("barraAdminTabs")
-        .scrollIntoView({
+
+    if (panelVisible) {
+
+      const rect =
+        panelVisible.getBoundingClientRect();
+
+
+      if (
+        rect.top > window.innerHeight - 110
+        ||
+        rect.bottom < 95
+      ) {
+        panelVisible.scrollIntoView({
           behavior: "smooth",
           block: "start"
         });
-
-    }
-    else {
-
-      $("panelModulo")
-        .scrollIntoView({
-          behavior: "smooth",
-          block: "start"
-        });
+      }
     }
   }
 
@@ -13916,9 +14570,7 @@
       );
 
 
-    if (opcionesNavegacionActual().length) {
-      $("introAdmin")?.classList.remove("hidden");
-    }
+    $("introAdmin")?.classList.add("hidden");
 
 
     $("panelModulo")
