@@ -340,6 +340,78 @@
       line-height:1.35;
     }
 
+    /* ====================== PERMANENCIA ====================== */
+
+    .permanenciaHero{
+      display:grid;
+      grid-template-columns:1.15fr .85fr;
+      gap:12px;
+      margin-bottom:14px;
+    }
+
+    .permanenciaPeriodo{
+      padding:16px;
+      border:1px solid #cfe0eb;
+      border-radius:12px;
+      background:linear-gradient(135deg,#f7fbfe,#edf6fb);
+    }
+
+    .permanenciaPeriodo span{
+      display:block;
+      color:var(--gris);
+      font-size:10px;
+      font-weight:800;
+      text-transform:uppercase;
+      margin-bottom:5px;
+    }
+
+    .permanenciaPeriodo strong{
+      display:block;
+      color:var(--azul);
+      font-size:17px;
+      line-height:1.35;
+    }
+
+    .permanenciaPeriodo small{
+      display:block;
+      margin-top:5px;
+      color:#53677c;
+      line-height:1.4;
+    }
+
+    .permanenciaAcciones{
+      display:flex;
+      align-items:flex-end;
+      justify-content:flex-end;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+
+    .permanenciaTabla{min-width:620px}
+    .permanenciaTabla td:first-child{font-weight:800;color:var(--azul)}
+    .permanenciaPersona{font-weight:750;color:#172033}
+    .permanenciaVacia{color:#94a3b8;font-style:italic}
+
+    .permanenciaEstado{
+      margin:14px 0;
+      padding:12px 14px;
+      border-radius:10px;
+      border:1px solid var(--borde);
+      background:#f8fafc;
+      line-height:1.45;
+      font-size:12px;
+    }
+
+    .permanenciaEstado.si{border-color:#b8e3ce;background:var(--verdeF);color:#126a47}
+    .permanenciaEstado.no{border-color:#d7e2ea;background:#f8fafc;color:#52657a}
+    .permanenciaEstado.sinDatos{border-color:#f0d49f;background:var(--naranjoF);color:#7a5200}
+
+    @media(max-width:820px){
+      .permanenciaHero{grid-template-columns:1fr}
+      .permanenciaAcciones{justify-content:flex-start}
+      .permanenciaAcciones .btn{width:auto}
+    }
+
     #panelModulo{margin-top:18px;padding:24px}
     .panelHead{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:20px}
     .panelHead h2{margin:0 0 5px;color:var(--azul)}
@@ -622,21 +694,12 @@
 
       </section>
 
-      <nav id="barraAdminTabs" class="adminTabs hidden" aria-label="Módulos de Administración">
-
-        <button class="adminTab" type="button" data-modulo="resumenAdmin">Resumen</button>
-        <button class="adminTab" type="button" data-modulo="todasSolicitudes">Solicitudes</button>
-        <button class="adminTab" type="button" data-modulo="horasPagar">Horas a pagar</button>
-        <button class="adminTab" type="button" data-modulo="conciliacion">Conciliación SAP</button>
-        <button class="adminTab" type="button" data-modulo="exportar">Exportar</button>
-        <button class="adminTab" type="button" data-modulo="usuarios">Usuarios</button>
-
-      </nav>
+      <nav id="barraAdminTabs" class="adminTabs hidden" aria-label="Módulos del portal"></nav>
 
       <div id="introAdmin" class="adminIntro hidden">
         <div>
-          <strong>Panel de Administración</strong>
-          <span>Selecciona una pestaña. Solo se mostrará el módulo elegido, sin tener que bajar por toda la página.</span>
+          <strong>Menú de módulos</strong>
+          <span>Selecciona una pestaña para trabajar sin desplazarte por una página larga.</span>
         </div>
       </div>
 
@@ -927,6 +990,9 @@
   let cacheAutorizaciones =
     new Map();
 
+  let cachePermanencias =
+    new Map();
+
   let activacionEnProceso =
     false;
 
@@ -959,6 +1025,17 @@
     "Octubre",
     "Noviembre",
     "Diciembre"
+  ];
+
+
+  const CAMPOS_PERMANENCIA = [
+    { clave: "arica", etiqueta: "Arica" },
+    { clave: "iquique", etiqueta: "Iquique" },
+    { clave: "lagunas", etiqueta: "Lagunas" },
+    { clave: "antofagasta", etiqueta: "Antofagasta" },
+    { clave: "encuentro", etiqueta: "Encuentro" },
+    { clave: "jefePermanencia", etiqueta: "Jefe Permanencia" },
+    { clave: "operaciones", etiqueta: "Operaciones" }
   ];
 
 
@@ -998,6 +1075,111 @@
   const puedeSolicitar =
     () =>
       perfilActual?.puedeSolicitarHE === true;
+
+
+  function opcionesNavegacionActual() {
+
+    const opciones = [];
+
+
+    if (puedeSolicitar()) {
+      opciones.push(
+        ["ingresarHhee", "Ingresar HHEE"],
+        ["misSolicitudes", "Mis solicitudes"],
+        ["misHoras", "Mis horas"]
+      );
+    }
+
+
+    if (esSupervisor()) {
+      opciones.push(
+        ["pendientesSupervisor", "Pendientes por aprobar"],
+        ["historialSupervisor", "Historial"]
+      );
+    }
+
+
+    if (esAdmin()) {
+      opciones.push(
+        ["resumenAdmin", "Resumen"],
+        ["todasSolicitudes", "Solicitudes"],
+        ["horasPagar", "Horas a pagar"],
+        ["permanencia", "Permanencia"],
+        ["conciliacion", "Conciliación SAP"],
+        ["exportar", "Exportar"],
+        ["usuarios", "Usuarios"]
+      );
+    }
+    else {
+      opciones.push(["permanencia", "Permanencia"]);
+    }
+
+
+    const vistas = new Set();
+
+    return opciones.filter(
+      ([clave]) => {
+        if (vistas.has(clave)) return false;
+        vistas.add(clave);
+        return true;
+      }
+    );
+  }
+
+
+  function moduloInicialPorRol() {
+
+    if (esAdmin()) return "resumenAdmin";
+    if (esSupervisor()) return "pendientesSupervisor";
+    if (puedeSolicitar()) return "misSolicitudes";
+    return "permanencia";
+  }
+
+
+  function configurarNavegacionPorRoles() {
+
+    const barra = $("barraAdminTabs");
+
+    if (!barra) return;
+
+
+    const opciones =
+      opcionesNavegacionActual();
+
+
+    barra.innerHTML =
+      opciones
+        .map(
+          ([clave, etiqueta]) =>
+            `<button class="adminTab" type="button" data-modulo="${esc(clave)}">${esc(etiqueta)}</button>`
+        )
+        .join("");
+
+
+    barra.classList.toggle(
+      "hidden",
+      !opciones.length
+    );
+
+
+    barra
+      .querySelectorAll(".adminTab")
+      .forEach(
+        boton =>
+          boton.addEventListener(
+            "click",
+            () => abrirModulo(boton.dataset.modulo)
+          )
+      );
+
+
+    $("introAdmin")
+      ?.classList
+      .toggle(
+        "hidden",
+        !opciones.length
+      );
+  }
 
 
   function esc(v) {
@@ -3739,43 +3921,28 @@
         .toUpperCase();
 
 
+    /*
+      La navegación principal se realiza mediante pestañas según rol.
+      Las antiguas tarjetas verticales se conservan en el HTML como
+      respaldo, pero permanecen ocultas para evitar desplazamientos largos.
+    */
+
     $("seccionTrabajador")
       .classList
-      .toggle(
-        "hidden",
-        !puedeSolicitar()
-      );
+      .add("hidden");
 
 
     $("seccionSupervisor")
       .classList
-      .toggle(
-        "hidden",
-        !esSupervisor()
-      );
+      .add("hidden");
 
 
     $("seccionAdministrador")
       .classList
-      .add(
-        "hidden"
-      );
+      .add("hidden");
 
 
-    $("barraAdminTabs")
-      .classList
-      .toggle(
-        "hidden",
-        !esAdmin()
-      );
-
-
-    $("introAdmin")
-      .classList
-      .toggle(
-        "hidden",
-        !esAdmin()
-      );
+    configurarNavegacionPorRoles();
 
 
     $("badgesUsuario")
@@ -5211,6 +5378,55 @@
 
 
   /* =========================================================
+     ACCESO RÁPIDO - INGRESAR HHEE
+  ========================================================= */
+
+  function renderIngresarHhee() {
+
+    $("contenidoModulo").innerHTML =
+      `
+        <div class="mensaje mensajeInfo">
+          Selecciona el formulario que corresponde al día de trabajo.
+        </div>
+
+        <div class="gridModulos">
+          <button class="modulo" type="button" id="irIngresoNormal">
+            <div class="modIcon">➕</div>
+            <div>
+              <h3>Ingreso normal</h3>
+              <p>Horas extras de lunes a sábado, aplicando automáticamente los tramos definidos.</p>
+            </div>
+            <div class="flecha">›</div>
+          </button>
+
+          <button class="modulo" type="button" id="irDomingoFeriado">
+            <div class="modIcon">📅</div>
+            <div>
+              <h3>Domingo o feriado</h3>
+              <p>Formulario especial para trabajos realizados en domingo o feriado.</p>
+            </div>
+            <div class="flecha">›</div>
+          </button>
+        </div>
+      `;
+
+
+    $("irIngresoNormal")
+      .addEventListener(
+        "click",
+        () => abrirModulo("ingresoNormal")
+      );
+
+
+    $("irDomingoFeriado")
+      .addEventListener(
+        "click",
+        () => abrirModulo("domingoFeriado")
+      );
+  }
+
+
+  /* =========================================================
      FORMULARIO SOLICITUD
   ========================================================= */
 
@@ -6573,7 +6789,7 @@
 
 
   window.verSolicitud =
-    id => {
+    async id => {
 
       const s =
         cacheSolicitudes.get(
@@ -6607,6 +6823,22 @@
       const esSolicitudPropia =
         s.trabajadorUid ===
         usuarioActual?.uid;
+
+
+      let permanenciaSolicitudHtml =
+        "";
+
+
+      try {
+        permanenciaSolicitudHtml =
+          await obtenerInfoPermanenciaSolicitud(s);
+      }
+      catch (err) {
+        console.warn(
+          "[HHEE] No fue posible consultar permanencia para la solicitud:",
+          err
+        );
+      }
 
 
       const tr =
@@ -6727,6 +6959,8 @@
             </div>
 
           </div>
+
+          ${permanenciaSolicitudHtml}
 
 
           <div class="detalleTramos">
@@ -8263,6 +8497,1151 @@
           );
         }
       );
+  }
+
+
+  /* =========================================================
+     PERMANENCIA
+     - Fecha de referencia: domingo
+     - Ventana real: viernes 14:30 a lunes 07:59
+     - Administrador: crea, edita, elimina e importa Excel
+     - Supervisor / trabajador: solo visualiza
+  ========================================================= */
+
+  function periodoPermanencia(fechaDomingo) {
+
+    const viernes =
+      sumarDias(
+        fechaDomingo,
+        -2
+      );
+
+
+    const lunes =
+      sumarDias(
+        fechaDomingo,
+        1
+      );
+
+
+    return {
+      fechaDomingo,
+      viernes,
+      lunes,
+      horaInicio: "14:30",
+      horaTermino: "07:59",
+      texto: `Viernes ${fechaCL(viernes)} 14:30 → lunes ${fechaCL(lunes)} 07:59`
+    };
+  }
+
+
+  function esDomingoIso(fecha) {
+
+    if (!fecha) return false;
+
+    return new Date(
+      inicioDia(fecha)
+    ).getUTCDay() === 0;
+  }
+
+
+  function claveFilaPermanencia(etiqueta) {
+
+    const n =
+      normalizarTexto(etiqueta)
+        .replace(/\./g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+
+    if (n === "arica") return "arica";
+    if (n === "iquique") return "iquique";
+    if (n === "lagunas") return "lagunas";
+    if (n === "antofagasta") return "antofagasta";
+    if (n === "encuentro") return "encuentro";
+    if (n.includes("jefe") && n.includes("permanencia")) return "jefePermanencia";
+    if (n === "operaciones") return "operaciones";
+
+    return "";
+  }
+
+
+  async function cargarPermanencias() {
+
+    const snap =
+      await getDocs(
+        collection(
+          db,
+          "permanencias"
+        )
+      );
+
+
+    const arr =
+      snap.docs
+        .map(
+          d => ({
+            id: d.id,
+            ...d.data(),
+            fechaDomingo:
+              d.data()?.fechaDomingo
+              ||
+              d.id
+          })
+        )
+        .filter(
+          x => x.fechaDomingo
+        )
+        .sort(
+          (a, b) =>
+            a.fechaDomingo.localeCompare(
+              b.fechaDomingo
+            )
+        );
+
+
+    cachePermanencias.clear();
+
+
+    arr.forEach(
+      x =>
+        cachePermanencias.set(
+          x.fechaDomingo,
+          x
+        )
+    );
+
+
+    return arr;
+  }
+
+
+  function permanenciaMasCercana(arr) {
+
+    if (!arr.length) return "";
+
+
+    const hoy =
+      hoyIso();
+
+
+    const siguiente =
+      arr.find(
+        x => x.fechaDomingo >= hoy
+      );
+
+
+    return (
+      siguiente?.fechaDomingo
+      ||
+      arr[arr.length - 1]?.fechaDomingo
+      ||
+      ""
+    );
+  }
+
+
+  function htmlDetallePermanencia(p) {
+
+    if (!p) {
+      return `
+        <div class="mensaje mensajeInfo">
+          No hay un turno seleccionado.
+        </div>
+      `;
+    }
+
+
+    const periodo =
+      periodoPermanencia(
+        p.fechaDomingo
+      );
+
+
+    const asignaciones =
+      p.asignaciones
+      ||
+      {};
+
+
+    return `
+      <div class="permanenciaHero">
+        <div class="permanenciaPeriodo">
+          <span>Fecha de referencia</span>
+          <strong>Domingo ${fechaCL(p.fechaDomingo)}</strong>
+          <small>${esc(periodo.texto)}</small>
+        </div>
+
+        <div class="permanenciaPeriodo">
+          <span>Regla de la aplicación</span>
+          <strong>Viernes 14:30 → lunes 07:59</strong>
+          <small>La fecha del domingo identifica el fin de semana completo de permanencia.</small>
+        </div>
+      </div>
+
+      <div class="tablaWrap">
+        <table class="tabla permanenciaTabla">
+          <thead>
+            <tr>
+              <th>Ubicación / función</th>
+              <th>Persona de permanencia</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${
+              CAMPOS_PERMANENCIA
+                .map(
+                  campo => {
+                    const persona =
+                      String(
+                        asignaciones[campo.clave]
+                        ||
+                        ""
+                      ).trim();
+
+                    return `
+                      <tr>
+                        <td>${esc(campo.etiqueta)}</td>
+                        <td>
+                          ${
+                            persona
+                              ? `<span class="permanenciaPersona">${esc(persona)}</span>`
+                              : `<span class="permanenciaVacia">Sin asignación</span>`
+                          }
+                        </td>
+                      </tr>
+                    `;
+                  }
+                )
+                .join("")
+            }
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+
+  async function renderPermanencia(fechaPreferida = "") {
+
+    let arr = [];
+
+
+    try {
+      arr =
+        await cargarPermanencias();
+    }
+    catch (err) {
+      console.error(err);
+
+      $("contenidoModulo").innerHTML = `
+        <div class="mensaje mensajeError">
+          No fue posible leer la programación de permanencia desde Firestore.
+        </div>
+      `;
+
+      throw err;
+    }
+
+
+    const fechaInicial =
+      (
+        fechaPreferida
+        &&
+        arr.some(
+          x => x.fechaDomingo === fechaPreferida
+        )
+      )
+        ? fechaPreferida
+        : permanenciaMasCercana(arr);
+
+
+    $("contenidoModulo").innerHTML = `
+      <div class="bloque">
+        <div class="grid2">
+          <div>
+            <label>Fin de semana / domingo de referencia</label>
+            <select id="perSeleccion" ${arr.length ? "" : "disabled"}>
+              ${
+                arr.length
+                  ? arr
+                      .map(
+                        p => `
+                          <option
+                            value="${esc(p.fechaDomingo)}"
+                            ${p.fechaDomingo === fechaInicial ? "selected" : ""}
+                          >
+                            Domingo ${fechaCL(p.fechaDomingo)}
+                          </option>
+                        `
+                      )
+                      .join("")
+                  : `<option value="">Sin turnos cargados</option>`
+              }
+            </select>
+            <div class="nota">
+              La aplicación usa el domingo como referencia, pero calcula el período desde el viernes anterior a las 14:30 hasta el lunes a las 07:59.
+            </div>
+          </div>
+
+          <div class="permanenciaAcciones">
+            ${
+              esAdmin()
+                ? `
+                    <input
+                      id="perArchivoExcel"
+                      class="hidden"
+                      type="file"
+                      accept=".xlsx,.xls,.csv"
+                    >
+
+                    <button class="btn btnSecundario" type="button" id="btnImportarPermanencia">
+                      Importar Excel
+                    </button>
+
+                    <button class="btn btnPrimario" type="button" id="btnNuevaPermanencia">
+                      Nuevo turno
+                    </button>
+                  `
+                : `
+                    <div class="mensaje mensajeInfo" style="margin:0">
+                      Vista de solo lectura.
+                    </div>
+                  `
+            }
+          </div>
+        </div>
+      </div>
+
+      <div id="perDetalle"></div>
+    `;
+
+
+    const pintar =
+      () => {
+
+        const fecha =
+          $("perSeleccion")?.value
+          ||
+          "";
+
+
+        const p =
+          cachePermanencias.get(fecha)
+          ||
+          null;
+
+
+        $("perDetalle").innerHTML =
+          `
+            ${htmlDetallePermanencia(p)}
+
+            ${
+              esAdmin()
+              &&
+              p
+                ? `
+                    <div class="acciones">
+                      <button class="btn btnSecundario" type="button" id="btnEditarPermanencia">
+                        Editar turno
+                      </button>
+
+                      <button class="btn btnPeligro" type="button" id="btnEliminarPermanencia">
+                        Eliminar turno
+                      </button>
+                    </div>
+                  `
+                : ""
+            }
+          `;
+
+
+        if (
+          esAdmin()
+          &&
+          p
+        ) {
+
+          $("btnEditarPermanencia")
+            ?.addEventListener(
+              "click",
+              () => formPermanencia(p)
+            );
+
+
+          $("btnEliminarPermanencia")
+            ?.addEventListener(
+              "click",
+              () => eliminarPermanencia(p.fechaDomingo)
+            );
+        }
+      };
+
+
+    $("perSeleccion")
+      ?.addEventListener(
+        "change",
+        pintar
+      );
+
+
+    if (esAdmin()) {
+
+      $("btnNuevaPermanencia")
+        ?.addEventListener(
+          "click",
+          () => formPermanencia(null)
+        );
+
+
+      $("btnImportarPermanencia")
+        ?.addEventListener(
+          "click",
+          () => $("perArchivoExcel")?.click()
+        );
+
+
+      $("perArchivoExcel")
+        ?.addEventListener(
+          "change",
+          async e => {
+
+            const file =
+              e.target.files?.[0];
+
+
+            if (!file) return;
+
+
+            try {
+
+              const cantidad =
+                await importarExcelPermanencia(file);
+
+
+              toast(
+                `Programación importada: ${cantidad} turno(s).`,
+                "exito"
+              );
+
+
+              await renderPermanencia();
+
+            }
+            catch (err) {
+
+              console.error(err);
+
+              toast(
+                err.message
+                ||
+                "No fue posible importar el Excel de permanencia.",
+                "error"
+              );
+            }
+          }
+        );
+    }
+
+
+    pintar();
+  }
+
+
+  function formPermanencia(p = null) {
+
+    if (!esAdmin()) {
+      return toast(
+        "Solo Administración puede modificar la permanencia.",
+        "error"
+      );
+    }
+
+
+    const nuevo =
+      !p;
+
+
+    const asignaciones =
+      p?.asignaciones
+      ||
+      {};
+
+
+    modal(`
+      <h3>${nuevo ? "Agregar nuevo turno de permanencia" : "Editar turno de permanencia"}</h3>
+
+      <div class="mensaje mensajeInfo">
+        La fecha registrada es el <b>domingo de referencia</b>. La ventana real será viernes 14:30 → lunes 07:59.
+      </div>
+
+      <form id="formPermanencia">
+        <div class="campo">
+          <label>Domingo de referencia *</label>
+          <input
+            id="perFechaDomingo"
+            type="date"
+            value="${esc(p?.fechaDomingo || "")}"
+            ${nuevo ? "" : "readonly"}
+            required
+          >
+          <div class="nota">La fecha debe corresponder a un domingo.</div>
+        </div>
+
+        <div class="grid2">
+          ${
+            CAMPOS_PERMANENCIA
+              .map(
+                campo => `
+                  <div>
+                    <label>${esc(campo.etiqueta)}</label>
+                    <input
+                      id="per_${esc(campo.clave)}"
+                      value="${esc(asignaciones[campo.clave] || "")}"
+                      placeholder="Nombre de la persona"
+                    >
+                  </div>
+                `
+              )
+              .join("")
+          }
+        </div>
+
+        <div class="acciones">
+          <button type="button" class="btn btnSecundario" onclick="window.cerrarModal()">
+            Cancelar
+          </button>
+          <button type="submit" class="btn btnPrimario" id="btnGuardarPermanencia">
+            Guardar turno
+          </button>
+        </div>
+      </form>
+    `);
+
+
+    $("formPermanencia")
+      .addEventListener(
+        "submit",
+        async e => {
+
+          e.preventDefault();
+
+
+          const fechaDomingo =
+            $("perFechaDomingo").value;
+
+
+          if (!esDomingoIso(fechaDomingo)) {
+            return toast(
+              "La fecha de referencia debe ser domingo.",
+              "error"
+            );
+          }
+
+
+          const asignacionesNuevas = {};
+
+
+          CAMPOS_PERMANENCIA.forEach(
+            campo => {
+              asignacionesNuevas[campo.clave] =
+                $("per_" + campo.clave)
+                  .value
+                  .trim();
+            }
+          );
+
+
+          const ref =
+            doc(
+              db,
+              "permanencias",
+              fechaDomingo
+            );
+
+
+          try {
+
+            if (nuevo) {
+              const existente =
+                await getDoc(ref);
+
+              if (existente.exists()) {
+                return toast(
+                  "Ya existe un turno para ese domingo.",
+                  "error"
+                );
+              }
+            }
+
+
+            const periodo =
+              periodoPermanencia(
+                fechaDomingo
+              );
+
+
+            await setDoc(
+              ref,
+              {
+                fechaDomingo,
+                fechaInicio: periodo.viernes,
+                horaInicio: "14:30",
+                fechaTermino: periodo.lunes,
+                horaTermino: "07:59",
+                asignaciones: asignacionesNuevas,
+                activo: true,
+                actualizadoEn: serverTimestamp(),
+                actualizadoPor: correoActual(),
+                ...(nuevo
+                  ? {
+                      creadoEn: serverTimestamp(),
+                      creadoPor: correoActual()
+                    }
+                  : {})
+              },
+              {
+                merge: true
+              }
+            );
+
+
+            cerrarModal();
+
+
+            toast(
+              nuevo
+                ? "Turno de permanencia agregado."
+                : "Turno de permanencia actualizado.",
+              "exito"
+            );
+
+
+            await renderPermanencia(
+              fechaDomingo
+            );
+
+          }
+          catch (err) {
+
+            console.error(err);
+
+            toast(
+              err.code?.includes("permission")
+                ? "Firestore rechazó el cambio de permanencia. Revisa las reglas de permisos."
+                : "No fue posible guardar el turno de permanencia.",
+              "error"
+            );
+          }
+        }
+      );
+  }
+
+
+  async function eliminarPermanencia(fechaDomingo) {
+
+    if (!esAdmin()) {
+      return toast(
+        "Solo Administración puede eliminar turnos.",
+        "error"
+      );
+    }
+
+
+    if (
+      !confirm(
+        `¿Eliminar el turno de permanencia del domingo ${fechaCL(fechaDomingo)}?`
+      )
+    ) {
+      return;
+    }
+
+
+    try {
+
+      await deleteDoc(
+        doc(
+          db,
+          "permanencias",
+          fechaDomingo
+        )
+      );
+
+
+      cachePermanencias.delete(
+        fechaDomingo
+      );
+
+
+      toast(
+        "Turno de permanencia eliminado.",
+        "exito"
+      );
+
+
+      await renderPermanencia();
+
+    }
+    catch (err) {
+
+      console.error(err);
+
+      toast(
+        err.code?.includes("permission")
+          ? "Firestore rechazó la eliminación. Revisa las reglas de permisos."
+          : "No fue posible eliminar el turno.",
+        "error"
+      );
+    }
+  }
+
+
+  async function importarExcelPermanencia(file) {
+
+    if (!esAdmin()) {
+      throw new Error(
+        "Solo Administración puede importar la programación."
+      );
+    }
+
+
+    if (!window.XLSX) {
+      throw new Error(
+        "No se cargó SheetJS para leer Excel."
+      );
+    }
+
+
+    const wb =
+      XLSX.read(
+        await file.arrayBuffer(),
+        {
+          type: "array",
+          cellDates: true
+        }
+      );
+
+
+    let filas = null;
+    let hojaUsada = "";
+    let indiceCabecera = -1;
+
+
+    for (const nombreHoja of wb.SheetNames) {
+
+      const prueba =
+        XLSX.utils.sheet_to_json(
+          wb.Sheets[nombreHoja],
+          {
+            header: 1,
+            defval: "",
+            raw: true
+          }
+        );
+
+
+      const i =
+        prueba.findIndex(
+          fila =>
+            normalizarTexto(
+              fila?.[0]
+              ||
+              ""
+            ).includes("disponibilidad")
+        );
+
+
+      if (i >= 0) {
+        filas = prueba;
+        hojaUsada = nombreHoja;
+        indiceCabecera = i;
+        break;
+      }
+    }
+
+
+    if (
+      !filas
+      ||
+      indiceCabecera < 0
+    ) {
+      throw new Error(
+        "No se encontró la fila DISPONIBILIDAD en el Excel."
+      );
+    }
+
+
+    const cabecera =
+      filas[indiceCabecera];
+
+
+    const filasCampos =
+      new Map();
+
+
+    for (
+      let r = indiceCabecera + 1;
+      r < filas.length;
+      r++
+    ) {
+
+      const clave =
+        claveFilaPermanencia(
+          filas[r]?.[0]
+          ||
+          ""
+        );
+
+
+      if (clave) {
+        filasCampos.set(
+          clave,
+          filas[r]
+        );
+      }
+    }
+
+
+    if (!filasCampos.size) {
+      throw new Error(
+        "No se encontraron las filas Arica, Iquique, Lagunas, Antofagasta, Encuentro, Jefe Permanencia u Operaciones."
+      );
+    }
+
+
+    const registros = [];
+
+
+    for (
+      let c = 1;
+      c < cabecera.length;
+      c++
+    ) {
+
+      const fechaDomingo =
+        fechaSAP(
+          cabecera[c]
+        );
+
+
+      if (
+        !fechaDomingo
+        ||
+        !esDomingoIso(fechaDomingo)
+      ) {
+        continue;
+      }
+
+
+      const asignaciones = {};
+
+
+      CAMPOS_PERMANENCIA.forEach(
+        campo => {
+          const fila =
+            filasCampos.get(
+              campo.clave
+            );
+
+          asignaciones[campo.clave] =
+            String(
+              fila?.[c]
+              ??
+              ""
+            ).trim();
+        }
+      );
+
+
+      const periodo =
+        periodoPermanencia(
+          fechaDomingo
+        );
+
+
+      registros.push({
+        fechaDomingo,
+        fechaInicio: periodo.viernes,
+        horaInicio: "14:30",
+        fechaTermino: periodo.lunes,
+        horaTermino: "07:59",
+        asignaciones
+      });
+    }
+
+
+    if (!registros.length) {
+      throw new Error(
+        "No se encontraron domingos válidos en las columnas del Excel."
+      );
+    }
+
+
+    const batch =
+      writeBatch(db);
+
+
+    registros.forEach(
+      registro => {
+
+        batch.set(
+          doc(
+            db,
+            "permanencias",
+            registro.fechaDomingo
+          ),
+          {
+            ...registro,
+            activo: true,
+            origen: "excel",
+            archivoOrigen: file.name || "",
+            hojaOrigen: hojaUsada,
+            actualizadoEn: serverTimestamp(),
+            actualizadoPor: correoActual()
+          },
+          {
+            merge: true
+          }
+        );
+      }
+    );
+
+
+    await batch.commit();
+
+
+    return registros.length;
+  }
+
+
+  function domingoReferenciaSolicitud(s) {
+
+    const fecha =
+      String(
+        s?.fechaInicio
+        ||
+        ""
+      ).slice(0, 10);
+
+
+    const hora =
+      String(
+        s?.horaInicio
+        ||
+        "00:00"
+      ).slice(0, 5);
+
+
+    if (!fecha) return "";
+
+
+    const dow =
+      new Date(
+        inicioDia(fecha)
+      ).getUTCDay();
+
+
+    if (
+      dow === 5
+      &&
+      hora >= "14:30"
+    ) {
+      return sumarDias(fecha, 2);
+    }
+
+
+    if (dow === 6) {
+      return sumarDias(fecha, 1);
+    }
+
+
+    if (dow === 0) {
+      return fecha;
+    }
+
+
+    if (
+      dow === 1
+      &&
+      hora <= "07:59"
+    ) {
+      return sumarDias(fecha, -1);
+    }
+
+
+    return "";
+  }
+
+
+  function personaCoincidePermanencia(textoAsignado, s) {
+
+    const asignado =
+      normalizarTexto(
+        String(
+          textoAsignado
+          ||
+          ""
+        ).replace(/\./g, " ")
+      );
+
+
+    if (!asignado) return false;
+
+
+    const completos =
+      normalizarTexto(
+        `${s?.Nombre || ""} ${s?.Apellido || ""}`
+      )
+        .split(" ")
+        .filter(Boolean);
+
+
+    const tokens =
+      asignado
+        .split(" ")
+        .filter(Boolean);
+
+
+    if (!tokens.length || !completos.length) {
+      return false;
+    }
+
+
+    return tokens.every(
+      token => {
+        if (token.length === 1) {
+          return completos.some(
+            completo =>
+              completo.startsWith(token)
+          );
+        }
+
+        return completos.includes(token);
+      }
+    );
+  }
+
+
+  async function obtenerInfoPermanenciaSolicitud(s) {
+
+    const domingo =
+      domingoReferenciaSolicitud(s);
+
+
+    if (!domingo) {
+      return "";
+    }
+
+
+    let p =
+      cachePermanencias.get(
+        domingo
+      )
+      ||
+      null;
+
+
+    if (!p) {
+
+      try {
+        const snap =
+          await getDoc(
+            doc(
+              db,
+              "permanencias",
+              domingo
+            )
+          );
+
+
+        if (snap.exists()) {
+          p = {
+            id: snap.id,
+            ...snap.data(),
+            fechaDomingo:
+              snap.data()?.fechaDomingo
+              ||
+              snap.id
+          };
+
+          cachePermanencias.set(
+            domingo,
+            p
+          );
+        }
+      }
+      catch (err) {
+        console.warn(err);
+      }
+    }
+
+
+    const periodo =
+      periodoPermanencia(
+        domingo
+      );
+
+
+    if (!p) {
+      return `
+        <div class="permanenciaEstado sinDatos">
+          <b>Permanencia:</b> no hay programación cargada para el domingo ${fechaCL(domingo)}.
+          <br>
+          <small>${esc(periodo.texto)}</small>
+        </div>
+      `;
+    }
+
+
+    const asignaciones =
+      p.asignaciones
+      ||
+      {};
+
+
+    const coincidencias =
+      CAMPOS_PERMANENCIA
+        .filter(
+          campo =>
+            personaCoincidePermanencia(
+              asignaciones[campo.clave],
+              s
+            )
+        )
+        .map(
+          campo => ({
+            campo: campo.etiqueta,
+            persona: asignaciones[campo.clave]
+          })
+        );
+
+
+    if (coincidencias.length) {
+      return `
+        <div class="permanenciaEstado si">
+          <b>✓ Trabajador de permanencia</b>
+          <br>
+          ${
+            coincidencias
+              .map(
+                x => `${esc(x.campo)} · ${esc(x.persona)}`
+              )
+              .join("<br>")
+          }
+          <br>
+          <small>Domingo de referencia ${fechaCL(domingo)} · ${esc(periodo.texto)}</small>
+        </div>
+      `;
+    }
+
+
+    return `
+      <div class="permanenciaEstado no">
+        <b>Permanencia:</b> el trabajador no figura en la programación del domingo ${fechaCL(domingo)}.
+        <br>
+        <small>${esc(periodo.texto)}</small>
+      </div>
+    `;
   }
 
 
@@ -12109,6 +13488,23 @@
 
   async function abrirModulo(clave) {
 
+    const modulosTrabajador =
+      new Set([
+        "ingresarHhee",
+        "ingresoNormal",
+        "domingoFeriado",
+        "misSolicitudes",
+        "misHoras"
+      ]);
+
+
+    const modulosSupervisor =
+      new Set([
+        "pendientesSupervisor",
+        "historialSupervisor"
+      ]);
+
+
     const modulosAdmin =
       new Set([
         "resumenAdmin",
@@ -12119,6 +13515,42 @@
         "usuarios",
         "informePdf"
       ]);
+
+
+    if (
+      modulosTrabajador.has(clave)
+      &&
+      !puedeSolicitar()
+    ) {
+      return toast(
+        "Tu perfil no está habilitado para solicitar HHEE.",
+        "error"
+      );
+    }
+
+
+    if (
+      modulosSupervisor.has(clave)
+      &&
+      !esSupervisor()
+    ) {
+      return toast(
+        "Este módulo es exclusivo para supervisores.",
+        "error"
+      );
+    }
+
+
+    if (
+      modulosAdmin.has(clave)
+      &&
+      !esAdmin()
+    ) {
+      return toast(
+        "Este módulo es exclusivo para Administración.",
+        "error"
+      );
+    }
 
 
     const esModuloAdmin =
@@ -12142,8 +13574,6 @@
         tab =>
           tab.classList.toggle(
             "activa",
-            esModuloAdmin
-            &&
             tab.dataset.modulo === clave
           )
       );
@@ -12166,6 +13596,11 @@
 
 
     const titulos = {
+
+      ingresarHhee: [
+        "Ingresar HHEE",
+        "Selecciona el formulario correspondiente al día de trabajo."
+      ],
 
       ingresoNormal: [
         "Ingresar horas extras",
@@ -12212,6 +13647,11 @@
         "Solicitudes aprobadas por supervisor y cálculo por recargo."
       ],
 
+      permanencia: [
+        "Permanencia",
+        "Programación de turnos por fin de semana. El domingo es la fecha de referencia."
+      ],
+
       usuarios: [
         "Usuarios",
         "Administración de perfiles y permisos."
@@ -12251,6 +13691,14 @@
     try {
 
       if (
+        clave ===
+        "ingresarHhee"
+      ) {
+
+        renderIngresarHhee();
+
+      }
+      else if (
         clave ===
         "ingresoNormal"
       ) {
@@ -12346,6 +13794,14 @@
       }
       else if (
         clave ===
+        "permanencia"
+      ) {
+
+        await renderPermanencia();
+
+      }
+      else if (
+        clave ===
         "usuarios"
       ) {
 
@@ -12400,10 +13856,14 @@
     }
 
 
-    if (esModuloAdmin) {
+    if (
+      $("barraAdminTabs")
+      &&
+      !$("barraAdminTabs").classList.contains("hidden")
+    ) {
 
       $("barraAdminTabs")
-        ?.scrollIntoView({
+        .scrollIntoView({
           behavior: "smooth",
           block: "start"
         });
@@ -12456,7 +13916,7 @@
       );
 
 
-    if (esAdmin()) {
+    if (opcionesNavegacionActual().length) {
       $("introAdmin")?.classList.remove("hidden");
     }
 
@@ -12504,6 +13964,7 @@
         cacheSolicitudes.clear();
         cacheUsuarios.clear();
         cacheAutorizaciones.clear();
+        cachePermanencias.clear();
 
         fidActual =
           "";
@@ -12671,6 +14132,12 @@
             {},
             "",
             window.location.pathname
+          );
+        }
+        else {
+
+          await abrirModulo(
+            moduloInicialPorRol()
           );
         }
 
