@@ -9874,7 +9874,18 @@
     let filas = null;
     let hojaUsada = "";
     let indiceCabecera = -1;
+    let columnaEtiquetas = -1;
 
+
+    /*
+      El Excel de permanencia puede tener una o más columnas vacías
+      antes de la tabla. Por eso no asumimos que DISPONIBILIDAD esté
+      en la columna A. Buscamos la celda que contiene la palabra
+      "disponibilidad" en cualquier columna de cada fila.
+
+      En el archivo actual, por ejemplo, DISPONIBILIDAD está en B3 y
+      las fechas comienzan en C3.
+    */
 
     for (const nombreHoja of wb.SheetNames) {
 
@@ -9889,21 +9900,50 @@
         );
 
 
-      const i =
-        prueba.findIndex(
-          fila =>
-            normalizarTexto(
-              fila?.[0]
-              ||
-              ""
-            ).includes("disponibilidad")
-        );
+      let filaEncontrada = -1;
+      let columnaEncontrada = -1;
 
 
-      if (i >= 0) {
+      for (
+        let r = 0;
+        r < prueba.length;
+        r++
+      ) {
+
+        const fila =
+          prueba[r]
+          ||
+          [];
+
+
+        const c =
+          fila.findIndex(
+            valor =>
+              normalizarTexto(
+                valor
+                ||
+                ""
+              ).includes("disponibilidad")
+          );
+
+
+        if (c >= 0) {
+          filaEncontrada = r;
+          columnaEncontrada = c;
+          break;
+        }
+      }
+
+
+      if (
+        filaEncontrada >= 0
+        &&
+        columnaEncontrada >= 0
+      ) {
         filas = prueba;
         hojaUsada = nombreHoja;
-        indiceCabecera = i;
+        indiceCabecera = filaEncontrada;
+        columnaEtiquetas = columnaEncontrada;
         break;
       }
     }
@@ -9913,9 +9953,11 @@
       !filas
       ||
       indiceCabecera < 0
+      ||
+      columnaEtiquetas < 0
     ) {
       throw new Error(
-        "No se encontró la fila DISPONIBILIDAD en el Excel."
+        "No se encontró la cabecera DISPONIBILIDAD en el Excel."
       );
     }
 
@@ -9936,7 +9978,7 @@
 
       const clave =
         claveFilaPermanencia(
-          filas[r]?.[0]
+          filas[r]?.[columnaEtiquetas]
           ||
           ""
         );
@@ -9953,7 +9995,7 @@
 
     if (!filasCampos.size) {
       throw new Error(
-        "No se encontraron las filas Arica, Iquique, Lagunas, Antofagasta, Encuentro, Jefe Permanencia u Operaciones."
+        "Se encontró DISPONIBILIDAD, pero no las filas Arica, Iquique, Lagunas, Antofagasta, Encuentro, Jefe Permanencia u Operaciones."
       );
     }
 
@@ -9961,8 +10003,14 @@
     const registros = [];
 
 
+    /*
+      Las fechas comienzan inmediatamente a la derecha de la celda
+      DISPONIBILIDAD. De esta forma funciona tanto si la tabla parte
+      en A como si parte en B, C, etc.
+    */
+
     for (
-      let c = 1;
+      let c = columnaEtiquetas + 1;
       c < cabecera.length;
       c++
     ) {
