@@ -1097,27 +1097,13 @@
 
         <div class="gridModulos">
 
-          <button class="modulo" data-modulo="ingresoNormal">
+          <button class="modulo" data-modulo="ingresarHhee">
 
             <div class="modIcon">➕</div>
 
             <div>
-              <h3>Ingresar horas extras</h3>
-              <p>Formulario normal de lunes a sábado.</p>
-            </div>
-
-            <div class="flecha">›</div>
-
-          </button>
-
-
-          <button class="modulo" data-modulo="domingoFeriado">
-
-            <div class="modIcon">📅</div>
-
-            <div>
-              <h3>Domingos y feriados</h3>
-              <p>Formulario especial para domingo o feriado.</p>
+              <h3>Ingresar HHEE</h3>
+              <p>Registra tus horas extras indicando si corresponden a un día normal o feriado.</p>
             </div>
 
             <div class="flecha">›</div>
@@ -5702,20 +5688,31 @@
     let principal;
 
 
-    if (
-      tipo ===
-      "Normal"
-    ) {
+    const diaTrabajo =
+      $("fDiaTrabajo")?.value
+      ||
+      "Normal";
 
-      principal =
-        calcularNormal(
-          ini,
-          fin,
-          "Jornada principal"
-        );
+    const fechaReferencia =
+      new Date(
+        inicioDia(
+          fIni
+        )
+      );
 
-    }
-    else {
+    const esDomingo =
+      fechaReferencia.getUTCDay() === 0;
+
+    const esFeriado =
+      diaTrabajo ===
+      "Feriado";
+
+    const usarEspecial =
+      esDomingo ||
+      esFeriado;
+
+
+    if (usarEspecial) {
 
       principal =
         calcularEspecial(
@@ -5723,7 +5720,21 @@
           fin,
           "Jornada principal",
           fIni,
-          $("fDiaTrabajo").value
+          esDomingo
+            ?
+              "Domingo"
+            :
+              "Feriado"
+        );
+
+    }
+    else {
+
+      principal =
+        calcularNormal(
+          ini,
+          fin,
+          "Jornada principal"
         );
     }
 
@@ -5833,20 +5844,7 @@
       }
 
 
-      if (
-        tipo ===
-        "Normal"
-      ) {
-
-        ext =
-          calcularNormal(
-            iniExt,
-            finExt,
-            "Extensión"
-          );
-
-      }
-      else {
+      if (usarEspecial) {
 
         ext =
           calcularEspecial(
@@ -5854,7 +5852,21 @@
             finExt,
             "Extensión",
             fIni,
-            $("fDiaTrabajo").value
+            esDomingo
+              ?
+                "Domingo"
+              :
+                "Feriado"
+          );
+
+      }
+      else {
+
+        ext =
+          calcularNormal(
+            iniExt,
+            finExt,
+            "Extensión"
           );
       }
     }
@@ -6027,48 +6039,23 @@
      ACCESO RÁPIDO - INGRESAR HHEE
   ========================================================= */
 
-  function renderIngresarHhee() {
+  function renderIngresarHhee(
+    data = null,
+    id = null
+  ) {
 
     $("contenidoModulo").innerHTML =
-      `
-        <div class="mensaje mensajeInfo">
-          Selecciona el formulario que corresponde al día de trabajo.
-        </div>
-
-        <div class="gridModulos">
-          <button class="modulo" type="button" id="irIngresoNormal">
-            <div class="modIcon">➕</div>
-            <div>
-              <h3>Ingreso normal</h3>
-              <p>Horas extras de lunes a sábado, aplicando automáticamente los tramos definidos.</p>
-            </div>
-            <div class="flecha">›</div>
-          </button>
-
-          <button class="modulo" type="button" id="irDomingoFeriado">
-            <div class="modIcon">📅</div>
-            <div>
-              <h3>Domingo o feriado</h3>
-              <p>Formulario especial para trabajos realizados en domingo o feriado.</p>
-            </div>
-            <div class="flecha">›</div>
-          </button>
-        </div>
-      `;
-
-
-    $("irIngresoNormal")
-      .addEventListener(
-        "click",
-        () => abrirModulo("ingresoNormal")
+      formularioSolicitud(
+        "Normal",
+        data,
+        id
       );
 
-
-    $("irDomingoFeriado")
-      .addEventListener(
-        "click",
-        () => abrirModulo("domingoFeriado")
-      );
+    configurarFormularioSolicitud(
+      "Normal",
+      data,
+      id
+    );
   }
 
 
@@ -6081,11 +6068,6 @@
     data = null,
     id = null
   ) {
-
-    const especial =
-      tipo ===
-      "DomingoFeriado";
-
 
     return `
       <form id="formSolicitud">
@@ -6162,69 +6144,64 @@
         <div class="bloque">
 
           <h3>
-            ${
-              especial
-                ?
-                  "Trabajo domingo o feriado"
-                :
-                  "Jornada de horas extras"
-            }
+            Jornada de horas extras
           </h3>
 
           <div class="grid2">
 
-            ${
-              especial
-                ?
-                  `
-                    <div>
+            <div>
 
-                      <label>
-                        Día de trabajo *
-                      </label>
+              <label>
+                Día de trabajo *
+              </label>
 
-                      <select
-                        id="fDiaTrabajo"
-                        required
-                      >
+              <select
+                id="fDiaTrabajo"
+                required
+              >
 
-                        <option value="">
-                          Seleccione
-                        </option>
+                <option value="">
+                  Seleccione
+                </option>
 
-                        <option
-                          ${
-                            data?.diaTrabajo ===
-                            "Domingo"
-                              ?
-                                "selected"
-                              :
-                                ""
-                          }
-                        >
-                          Domingo
-                        </option>
+                <option
+                  value="Normal"
+                  ${
+                    data?.diaTrabajo === "Normal"
+                      ||
+                    data?.diaTrabajo === "Domingo"
+                      ||
+                    !data?.diaTrabajo
+                      ?
+                        "selected"
+                      :
+                        ""
+                  }
+                >
+                  Normal
+                </option>
 
-                        <option
-                          ${
-                            data?.diaTrabajo ===
-                            "Feriado"
-                              ?
-                                "selected"
-                              :
-                                ""
-                          }
-                        >
-                          Feriado
-                        </option>
+                <option
+                  value="Feriado"
+                  ${
+                    data?.diaTrabajo ===
+                    "Feriado"
+                      ?
+                        "selected"
+                      :
+                        ""
+                  }
+                >
+                  Feriado
+                </option>
 
-                      </select>
+              </select>
 
-                    </div>
-                  `
-                :
-                  ""
-            }
+              <div class="nota">
+                Si la fecha corresponde a domingo, el sistema lo detectará automáticamente.
+              </div>
+
+            </div>
 
 
             <div>
@@ -6309,8 +6286,7 @@
                 ${
                   [
                     "Emergencia",
-                    "Planificado",
-                    "Terceros"
+                    "Planificado"
                   ]
                   .map(
                     x =>
@@ -6764,12 +6740,11 @@
           tipo,
 
         diaTrabajo:
-          tipo ===
-          "DomingoFeriado"
+          esDomingo
             ?
-              $("fDiaTrabajo").value
+              "Domingo"
             :
-              "",
+              diaTrabajo,
 
         trabajadorUid:
           usuarioActual.uid,
@@ -7752,8 +7727,6 @@
       $("contenidoModulo")
         .innerHTML =
           formularioSolicitud(
-            s.tipoFormulario
-            ||
             "Normal",
             s,
             id
@@ -7761,8 +7734,6 @@
 
 
       configurarFormularioSolicitud(
-        s.tipoFormulario
-        ||
         "Normal",
         id
       );
@@ -14188,8 +14159,6 @@
     const modulosTrabajador =
       new Set([
         "ingresarHhee",
-        "ingresoNormal",
-        "domingoFeriado",
         "misSolicitudes",
         "misHoras"
       ]);
@@ -14301,17 +14270,7 @@
 
       ingresarHhee: [
         "Ingresar HHEE",
-        "Selecciona el formulario correspondiente al día de trabajo."
-      ],
-
-      ingresoNormal: [
-        "Ingresar horas extras",
-        "Formulario normal de lunes a sábado."
-      ],
-
-      domingoFeriado: [
-        "Domingos y feriados",
-        "Formulario especial para domingo o feriado."
+        "Registra horas extras indicando si corresponde a un día normal o feriado."
       ],
 
       misSolicitudes: [
@@ -14398,40 +14357,6 @@
       ) {
 
         renderIngresarHhee();
-
-      }
-      else if (
-        clave ===
-        "ingresoNormal"
-      ) {
-
-        $("contenidoModulo")
-          .innerHTML =
-            formularioSolicitud(
-              "Normal"
-            );
-
-
-        configurarFormularioSolicitud(
-          "Normal"
-        );
-
-      }
-      else if (
-        clave ===
-        "domingoFeriado"
-      ) {
-
-        $("contenidoModulo")
-          .innerHTML =
-            formularioSolicitud(
-              "DomingoFeriado"
-            );
-
-
-        configurarFormularioSolicitud(
-          "DomingoFeriado"
-        );
 
       }
       else if (
