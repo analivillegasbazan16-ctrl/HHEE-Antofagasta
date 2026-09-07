@@ -5691,7 +5691,7 @@
     const diaTrabajo =
       $("fDiaTrabajo")?.value
       ||
-      "Normal";
+      "";
 
     const fechaReferencia =
       new Date(
@@ -5702,6 +5702,24 @@
 
     const esDomingo =
       fechaReferencia.getUTCDay() === 0;
+
+    /*
+      El domingo NO se selecciona manualmente.
+      Se determina exclusivamente por la fecha.
+
+      Si no es domingo, el usuario debe indicar
+      si corresponde a día Normal o Feriado.
+    */
+    if (
+      !esDomingo
+      &&
+      !diaTrabajo
+    ) {
+
+      throw new Error(
+        "Selecciona si el día corresponde a Normal o Feriado."
+      );
+    }
 
     const esFeriado =
       diaTrabajo ===
@@ -6152,12 +6170,11 @@
             <div>
 
               <label>
-                Día de trabajo *
+                Día normal o feriado
               </label>
 
               <select
                 id="fDiaTrabajo"
-                required
               >
 
                 <option value="">
@@ -6198,7 +6215,7 @@
               </select>
 
               <div class="nota">
-                Si la fecha corresponde a domingo, el sistema lo detectará automáticamente.
+                El domingo se detecta automáticamente según la fecha. Si no es domingo, selecciona Normal o Feriado.
               </div>
 
             </div>
@@ -6734,17 +6751,44 @@
         );
 
 
+      const fechaGuardado =
+        $("fFechaInicio").value;
+
+      const diaTrabajoGuardado =
+        $("fDiaTrabajo")?.value
+        ||
+        "";
+
+      const esDomingoGuardado =
+        new Date(
+          inicioDia(
+            fechaGuardado
+          )
+        )
+        .getUTCDay() === 0;
+
+      if (
+        !esDomingoGuardado
+        &&
+        !diaTrabajoGuardado
+      ) {
+
+        throw new Error(
+          "Selecciona si el día corresponde a Normal o Feriado."
+        );
+      }
+
       const datos = {
 
         tipoFormulario:
           tipo,
 
         diaTrabajo:
-          esDomingo
+          esDomingoGuardado
             ?
               "Domingo"
             :
-              diaTrabajo,
+              diaTrabajoGuardado,
 
         trabajadorUid:
           usuarioActual.uid,
