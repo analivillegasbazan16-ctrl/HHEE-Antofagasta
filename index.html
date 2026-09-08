@@ -7309,7 +7309,6 @@
   ) {
 
     if (!lista.length) {
-
       return `
         <div class="mensaje mensajeInfo">
           No hay solicitudes para mostrar.
@@ -7318,12 +7317,11 @@
     }
 
     const trabajadores = [
-      ...new Map(
-        lista.map(s => [
-          nombreCompleto(s),
-          nombreCompleto(s)
-        ])
-      ).values()
+      ...new Set(
+        lista
+          .map(s => nombreCompleto(s))
+          .filter(Boolean)
+      )
     ].sort((a, b) => a.localeCompare(b, "es"));
 
     const tipos = [
@@ -7335,26 +7333,16 @@
     ].sort((a, b) => a.localeCompare(b, "es"));
 
     const estados = [
-      "pendiente",
-      "aprobada",
-      "rechazada"
-    ].filter(e =>
-      lista.some(s => normEstado(s.estado) === e)
-    );
+      ["pendiente", "Pendiente"],
+      ["aprobada", "Aprobada"],
+      ["rechazada", "Rechazada"]
+    ].filter(([e]) => lista.some(s => normEstado(s.estado) === e));
 
     const meses = [
       ...new Set(
         lista
           .map(s => String(s.fechaInicio || "").slice(0, 7))
           .filter(x => /^\d{4}-\d{2}$/.test(x))
-      )
-    ].sort().reverse();
-
-    const anios = [
-      ...new Set(
-        lista
-          .map(s => String(s.fechaInicio || "").slice(0, 4))
-          .filter(x => /^\d{4}$/.test(x))
       )
     ].sort().reverse();
 
@@ -7368,47 +7356,47 @@
       return `${nombres[Number(mesNum) - 1] || mesNum} ${anio}`;
     };
 
+    const mostrarTrabajador =
+      modo === "supervisor" || modo === "historial" || modo === "admin";
+
+    const valorMes = filtros.mes || "";
+    const valorTipo = filtros.tipo || "";
+    const valorEstado = filtros.estado || "";
+    const valorTrabajador = filtros.trabajador || "";
+
     return `
       <div class="tablaWrap">
-
         <table class="tabla tablaConFiltros">
-
           <thead>
-
             <tr>
               <th>
                 <span class="thTitulo">Trabajador</span>
-                <select class="tablaFiltro" id="filtroTablaTrabajador">
-                  <option value="">Todos</option>
-                  ${trabajadores.map(v => `
-                    <option value="${esc(v)}" ${v === (filtros.trabajador || "") ? "selected" : ""}>
-                      ${esc(v)}
-                    </option>
-                  `).join("")}
-                </select>
+                ${
+                  mostrarTrabajador
+                    ? `
+                      <select class="tablaFiltro" id="filtroTablaTrabajador">
+                        <option value="">Todos</option>
+                        ${trabajadores.map(v => `
+                          <option value="${esc(v)}" ${v === valorTrabajador ? "selected" : ""}>
+                            ${esc(v)}
+                          </option>
+                        `).join("")}
+                      </select>
+                    `
+                    : ""
+                }
               </th>
 
               <th>
                 <span class="thTitulo">Fecha</span>
-                <div class="filtroFechaTabla">
-                  <select class="tablaFiltro" id="filtroTablaMes">
-                    <option value="">Mes</option>
-                    ${meses.map(v => `
-                      <option value="${esc(v)}" ${v === (filtros.mes || "") ? "selected" : ""}>
-                        ${esc(etiquetaMes(v))}
-                      </option>
-                    `).join("")}
-                  </select>
-
-                  <select class="tablaFiltro" id="filtroTablaAnio">
-                    <option value="">Año</option>
-                    ${anios.map(v => `
-                      <option value="${esc(v)}" ${v === (filtros.anio || "") ? "selected" : ""}>
-                        ${esc(v)}
-                      </option>
-                    `).join("")}
-                  </select>
-                </div>
+                <select class="tablaFiltro" id="filtroTablaMes">
+                  <option value="">Todos los meses</option>
+                  ${meses.map(v => `
+                    <option value="${esc(v)}" ${v === valorMes ? "selected" : ""}>
+                      ${esc(etiquetaMes(v))}
+                    </option>
+                  `).join("")}
+                </select>
               </th>
 
               <th>
@@ -7420,7 +7408,7 @@
                 <select class="tablaFiltro" id="filtroTablaTipo">
                   <option value="">Todos</option>
                   ${tipos.map(v => `
-                    <option value="${esc(v)}" ${v === (filtros.tipo || "") ? "selected" : ""}>
+                    <option value="${esc(v)}" ${v === valorTipo ? "selected" : ""}>
                       ${esc(v)}
                     </option>
                   `).join("")}
@@ -7435,9 +7423,9 @@
                 <span class="thTitulo">Estado</span>
                 <select class="tablaFiltro" id="filtroTablaEstado">
                   <option value="">Todos</option>
-                  ${estados.map(v => `
-                    <option value="${esc(v)}" ${v === (filtros.estado || "") ? "selected" : ""}>
-                      ${v === "pendiente" ? "Pendiente" : v === "aprobada" ? "Aprobada" : "Rechazada"}
+                  ${estados.map(([v, texto]) => `
+                    <option value="${v}" ${v === valorEstado ? "selected" : ""}>
+                      ${texto}
                     </option>
                   `).join("")}
                 </select>
@@ -7445,129 +7433,65 @@
 
               <th>Acciones</th>
             </tr>
-
           </thead>
 
           <tbody>
+            ${lista.map(s => `
+              <tr>
+                <td>
+                  ${esc(nombreCompleto(s))}
+                  <br>
+                  <small>
+                    ${esc(s.NumeroPersonal ? `N° ${s.NumeroPersonal} · ` : "")}${esc(s.Rut || "")}
+                  </small>
+                </td>
 
-            ${
-              lista.map(
-                s =>
-                  `
-                    <tr>
+                <td>${fechaCL(s.fechaInicio)}</td>
 
-                      <td>
-                        ${esc(nombreCompleto(s))}
-                        <br>
-                        <small>
-                          ${esc(s.NumeroPersonal ? `N° ${s.NumeroPersonal} · ` : "")}${esc(s.Rut || "")}
-                        </small>
-                      </td>
+                <td>
+                  ${esc(s.horaInicio || "")} - ${esc(s.horaTermino || "")}
+                </td>
 
-                      <td>
-                        ${fechaCL(s.fechaInicio)}
-                      </td>
+                <td>${esc(s.tipoFormulario || "")}</td>
 
-                      <td>
-                        ${esc(s.horaInicio || "")}
-                        -
-                        ${esc(s.horaTermino || "")}
-                      </td>
+                <td>${vistaHoras(s.horas50 || 0)}</td>
+                <td>${vistaHoras(s.horas75 || 0)}</td>
+                <td>${vistaHoras(s.horas100 || 0)}</td>
 
-                      <td>
-                        ${esc(s.tipoFormulario || "")}
-                      </td>
+                <td>${estadoHtml(s.estado)}</td>
 
-                      <td>
-                        ${vistaHoras(s.horas50 || 0)}
-                      </td>
+                <td>
+                  <div class="miniAcciones">
+                    <button class="btn btnSecundario" onclick="window.verSolicitud('${s.id}')">
+                      Ver
+                    </button>
 
-                      <td>
-                        ${vistaHoras(s.horas75 || 0)}
-                      </td>
+                    ${
+                      modo === "trabajador" && normEstado(s.estado) === "pendiente"
+                        ? `
+                          <button class="btn btnSecundario" onclick="window.editarSolicitud('${s.id}')">Editar</button>
+                          <button class="btn btnPeligro" onclick="window.eliminarSolicitud('${s.id}')">Eliminar</button>
+                        `
+                        : ""
+                    }
 
-                      <td>
-                        ${vistaHoras(s.horas100 || 0)}
-                      </td>
-
-                      <td>
-                        ${estadoHtml(s.estado)}
-                      </td>
-
-                      <td>
-
-                        <div class="miniAcciones">
-
-                          <button
-                            class="btn btnSecundario"
-                            onclick="window.verSolicitud('${s.id}')"
-                          >
-                            Ver
-                          </button>
-
-                          ${
-                            modo === "trabajador"
-                            &&
-                            normEstado(s.estado) === "pendiente"
-                              ?
-                                `
-                                  <button
-                                    class="btn btnSecundario"
-                                    onclick="window.editarSolicitud('${s.id}')"
-                                  >
-                                    Editar
-                                  </button>
-
-                                  <button
-                                    class="btn btnPeligro"
-                                    onclick="window.eliminarSolicitud('${s.id}')"
-                                  >
-                                    Eliminar
-                                  </button>
-                                `
-                              : ""
-                          }
-
-                          ${
-                            modo === "supervisor"
-                            &&
-                            normEstado(s.estado) === "pendiente"
-                              ?
-                                `
-                                  <button
-                                    class="btn btnExito"
-                                    onclick="window.decisionSupervisor('${s.id}','aprobada')"
-                                  >
-                                    Aprobar
-                                  </button>
-
-                                  <button
-                                    class="btn btnPeligro"
-                                    onclick="window.decisionSupervisor('${s.id}','rechazada')"
-                                  >
-                                    Rechazar
-                                  </button>
-                                `
-                              : ""
-                          }
-
-                        </div>
-
-                      </td>
-
-                    </tr>
-                  `
-              ).join("")
-            }
-
+                    ${
+                      modo === "supervisor" && normEstado(s.estado) === "pendiente"
+                        ? `
+                          <button class="btn btnExito" onclick="window.decisionSupervisor('${s.id}','aprobada')">Aprobar</button>
+                          <button class="btn btnPeligro" onclick="window.decisionSupervisor('${s.id}','rechazada')">Rechazar</button>
+                        `
+                        : ""
+                    }
+                  </div>
+                </td>
+              </tr>
+            `).join("")}
           </tbody>
-
         </table>
-
       </div>
     `;
   }
-
 
   window.verSolicitud =
     async id => {
@@ -8237,65 +8161,57 @@
 
   async function renderMisSolicitudes() {
 
-    const arr =
-      await cargarSolicitudesPropias();
+    const arr = await cargarSolicitudesPropias();
 
+    const filtros = {
+      mes: "",
+      tipo: "",
+      estado: ""
+    };
 
-    $("contenidoModulo")
-      .innerHTML =
-        `
-          <div class="resumenKpi">
+    const aplicar = () => {
+      const filtrada = arr.filter(s =>
+        (!filtros.mes || String(s.fechaInicio || "").startsWith(filtros.mes)) &&
+        (!filtros.tipo || String(s.tipoFormulario || "").trim() === filtros.tipo) &&
+        (!filtros.estado || normEstado(s.estado) === filtros.estado)
+      );
 
-            <div class="kpi">
-              <span>Total</span>
-              <strong>${arr.length}</strong>
-            </div>
+      const total = filtrada.length;
+      const pendientes = filtrada.filter(x => normEstado(x.estado) === "pendiente").length;
+      const aprobadas = filtrada.filter(x => normEstado(x.estado) === "aprobada").length;
+      const rechazadas = filtrada.filter(x => normEstado(x.estado) === "rechazada").length;
 
-            <div class="kpi">
-              <span>Pendientes</span>
-              <strong>${
-                arr.filter(
-                  x =>
-                    normEstado(
-                      x.estado
-                    ) ===
-                    "pendiente"
-                ).length
-              }</strong>
-            </div>
+      $("contenidoModulo").innerHTML = `
+        <div class="resumenKpi">
+          <div class="kpi"><span>Total</span><strong>${total}</strong></div>
+          <div class="kpi"><span>Pendientes</span><strong>${pendientes}</strong></div>
+          <div class="kpi"><span>Aprobadas</span><strong>${aprobadas}</strong></div>
+          <div class="kpi"><span>Rechazadas</span><strong>${rechazadas}</strong></div>
+        </div>
 
-            <div class="kpi">
-              <span>Aprobadas</span>
-              <strong>${
-                arr.filter(
-                  x =>
-                    normEstado(
-                      x.estado
-                    ) ===
-                    "aprobada"
-                ).length
-              }</strong>
-            </div>
+        ${
+          tablaSolicitudes(
+            filtrada,
+            "trabajador",
+            filtros
+          )
+        }
+      `;
 
-            <div class="kpi">
-              <span>Rechazadas</span>
-              <strong>${
-                arr.filter(
-                  x =>
-                    normEstado(
-                      x.estado
-                    ) ===
-                    "rechazada"
-                ).length
-              }</strong>
-            </div>
+      const conectar = (id, clave) => {
+        $(id)?.addEventListener("change", e => {
+          filtros[clave] = e.target.value;
+          aplicar();
+        });
+      };
 
-          </div>
+      conectar("filtroTablaMes", "mes");
+      conectar("filtroTablaTipo", "tipo");
+      conectar("filtroTablaEstado", "estado");
+    };
 
-          ${tablaSolicitudes(arr,"trabajador")}
-        `;
+    aplicar();
   }
-
 
   async function renderMisHoras() {
 
@@ -8381,66 +8297,41 @@
     pendientes
   ) {
 
-    const arr =
-      await cargarSolicitudesSupervisor();
+    const arr = await cargarSolicitudesSupervisor();
 
-    const lista =
-      arr.filter(
-        x =>
-          pendientes
-            ? normEstado(x.estado) === "pendiente"
-            : normEstado(x.estado) !== "pendiente"
-      );
+    const lista = arr.filter(s =>
+      pendientes
+        ? normEstado(s.estado) === "pendiente"
+        : normEstado(s.estado) !== "pendiente"
+    );
 
     const filtros = {
       trabajador: "",
       mes: "",
-      anio: "",
       tipo: "",
       estado: ""
     };
 
     const aplicar = () => {
+      const filtrada = lista.filter(s => {
+        const trabajador = String(nombreCompleto(s) || "").trim();
+        const fecha = String(s.fechaInicio || "");
+        const tipo = String(s.tipoFormulario || "").trim();
+        const estado = normEstado(s.estado);
 
-      const filtrada =
-        lista.filter(s => {
-
-          const trabajador =
-            String(s.nombreCompletoFiltro || nombreCompleto(s) || "").trim();
-
-          const fecha =
-            String(s.fechaInicio || "");
-
-          const tipo =
-            String(s.tipoFormulario || "").trim();
-
-          const estado =
-            normEstado(s.estado);
-
-          return (
-            !filtros.trabajador ||
-            trabajador === filtros.trabajador
-          ) && (
-            !filtros.mes ||
-            fecha.startsWith(filtros.mes)
-          ) && (
-            !filtros.anio ||
-            fecha.startsWith(filtros.anio)
-          ) && (
-            !filtros.tipo ||
-            tipo === filtros.tipo
-          ) && (
-            !filtros.estado ||
-            estado === filtros.estado
-          );
-        });
-
-      $("supTabla").innerHTML =
-        tablaSolicitudes(
-          filtrada,
-          pendientes ? "supervisor" : "historial",
-          filtros
+        return (
+          (!filtros.trabajador || trabajador === filtros.trabajador) &&
+          (!filtros.mes || fecha.startsWith(filtros.mes)) &&
+          (!filtros.tipo || tipo === filtros.tipo) &&
+          (!filtros.estado || estado === filtros.estado)
         );
+      });
+
+      $("supTabla").innerHTML = tablaSolicitudes(
+        filtrada,
+        pendientes ? "supervisor" : "historial",
+        filtros
+      );
 
       const conectar = (id, clave) => {
         $(id)?.addEventListener("change", e => {
@@ -8451,7 +8342,6 @@
 
       conectar("filtroTablaTrabajador", "trabajador");
       conectar("filtroTablaMes", "mes");
-      conectar("filtroTablaAnio", "anio");
       conectar("filtroTablaTipo", "tipo");
       conectar("filtroTablaEstado", "estado");
 
@@ -8465,22 +8355,16 @@
     $("contenidoModulo").innerHTML = `
       <div id="supFiltroContenedor" class="filtroTablaResumen">
         <span id="supContadorFiltros">${lista.length} solicitudes</span>
-        <button
-          type="button"
-          class="btn btnSecundario btnLimpiarFiltros"
-          id="supLimpiarFiltros"
-        >
+        <button type="button" class="btn btnSecundario btnLimpiarFiltros" id="supLimpiarFiltros">
           Limpiar filtros
         </button>
       </div>
-
       <div id="supTabla"></div>
     `;
 
     $("supLimpiarFiltros")?.addEventListener("click", () => {
       filtros.trabajador = "";
       filtros.mes = "";
-      filtros.anio = "";
       filtros.tipo = "";
       filtros.estado = "";
       aplicar();
@@ -8488,7 +8372,6 @@
 
     aplicar();
   }
-
 
   /* =========================================================
      ADMIN - TODAS SOLICITUDES
