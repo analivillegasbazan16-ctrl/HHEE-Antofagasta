@@ -270,6 +270,16 @@
     .adminIntro span{display:block;color:var(--gris);font-size:12px;margin-top:3px}
 
     .filtrosRango{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+
+    .filtroTablaResumen{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px;padding:0 4px}
+    .filtroTablaResumen span{font-weight:700;color:#55708d}
+    .btnLimpiarFiltros{padding:8px 14px;font-size:.9rem}
+    .tablaConFiltros th{vertical-align:top;white-space:nowrap}
+    .thTitulo{display:block;margin-bottom:7px}
+    .tablaFiltro{width:100%;min-width:110px;padding:7px 30px 7px 9px;border:1px solid #d5e1eb;border-radius:8px;background:#fff;font-size:.82rem;color:#173b5e;font-weight:600}
+    .filtroFechaTabla{display:flex;gap:5px}
+    .filtroFechaTabla .tablaFiltro{min-width:82px}
+
     .periodoGrupo{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 
     .tablaResumenTrabajador{min-width:1080px}
@@ -7271,14 +7281,34 @@
   }
 
 
+  function opcionesFiltroSelect(valores, valorActual = "", placeholder = "Todos") {
+
+    const unicos = [
+      ...new Set(
+        valores
+          .map(x => String(x || "").trim())
+          .filter(Boolean)
+      )
+    ].sort((a, b) => a.localeCompare(b, "es", { numeric: true }));
+
+    return `
+      <option value="">${esc(placeholder)}</option>
+      ${unicos.map(v => `
+        <option value="${esc(v)}" ${v === valorActual ? "selected" : ""}>
+          ${esc(v)}
+        </option>
+      `).join("")}
+    `;
+  }
+
+
   function tablaSolicitudes(
     lista,
-    modo
+    modo,
+    filtros = {}
   ) {
 
-    if (
-      !lista.length
-    ) {
+    if (!lista.length) {
 
       return `
         <div class="mensaje mensajeInfo">
@@ -7287,23 +7317,132 @@
       `;
     }
 
+    const trabajadores = [
+      ...new Map(
+        lista.map(s => [
+          nombreCompleto(s),
+          nombreCompleto(s)
+        ])
+      ).values()
+    ].sort((a, b) => a.localeCompare(b, "es"));
+
+    const tipos = [
+      ...new Set(
+        lista
+          .map(s => String(s.tipoFormulario || "").trim())
+          .filter(Boolean)
+      )
+    ].sort((a, b) => a.localeCompare(b, "es"));
+
+    const estados = [
+      "pendiente",
+      "aprobada",
+      "rechazada"
+    ].filter(e =>
+      lista.some(s => normEstado(s.estado) === e)
+    );
+
+    const meses = [
+      ...new Set(
+        lista
+          .map(s => String(s.fechaInicio || "").slice(0, 7))
+          .filter(x => /^\d{4}-\d{2}$/.test(x))
+      )
+    ].sort().reverse();
+
+    const anios = [
+      ...new Set(
+        lista
+          .map(s => String(s.fechaInicio || "").slice(0, 4))
+          .filter(x => /^\d{4}$/.test(x))
+      )
+    ].sort().reverse();
+
+    const etiquetaMes = mes => {
+      if (!/^\d{4}-\d{2}$/.test(mes)) return mes;
+      const [anio, mesNum] = mes.split("-");
+      const nombres = [
+        "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+      ];
+      return `${nombres[Number(mesNum) - 1] || mesNum} ${anio}`;
+    };
 
     return `
       <div class="tablaWrap">
 
-        <table class="tabla">
+        <table class="tabla tablaConFiltros">
 
           <thead>
 
             <tr>
-              <th>Trabajador</th>
-              <th>Fecha</th>
-              <th>Horario</th>
-              <th>Tipo</th>
+              <th>
+                <span class="thTitulo">Trabajador</span>
+                <select class="tablaFiltro" id="filtroTablaTrabajador">
+                  <option value="">Todos</option>
+                  ${trabajadores.map(v => `
+                    <option value="${esc(v)}" ${v === (filtros.trabajador || "") ? "selected" : ""}>
+                      ${esc(v)}
+                    </option>
+                  `).join("")}
+                </select>
+              </th>
+
+              <th>
+                <span class="thTitulo">Fecha</span>
+                <div class="filtroFechaTabla">
+                  <select class="tablaFiltro" id="filtroTablaMes">
+                    <option value="">Mes</option>
+                    ${meses.map(v => `
+                      <option value="${esc(v)}" ${v === (filtros.mes || "") ? "selected" : ""}>
+                        ${esc(etiquetaMes(v))}
+                      </option>
+                    `).join("")}
+                  </select>
+
+                  <select class="tablaFiltro" id="filtroTablaAnio">
+                    <option value="">Año</option>
+                    ${anios.map(v => `
+                      <option value="${esc(v)}" ${v === (filtros.anio || "") ? "selected" : ""}>
+                        ${esc(v)}
+                      </option>
+                    `).join("")}
+                  </select>
+                </div>
+              </th>
+
+              <th>
+                <span class="thTitulo">Horario</span>
+              </th>
+
+              <th>
+                <span class="thTitulo">Tipo</span>
+                <select class="tablaFiltro" id="filtroTablaTipo">
+                  <option value="">Todos</option>
+                  ${tipos.map(v => `
+                    <option value="${esc(v)}" ${v === (filtros.tipo || "") ? "selected" : ""}>
+                      ${esc(v)}
+                    </option>
+                  `).join("")}
+                </select>
+              </th>
+
               <th>50%</th>
               <th>75%</th>
               <th>100%</th>
-              <th>Estado</th>
+
+              <th>
+                <span class="thTitulo">Estado</span>
+                <select class="tablaFiltro" id="filtroTablaEstado">
+                  <option value="">Todos</option>
+                  ${estados.map(v => `
+                    <option value="${esc(v)}" ${v === (filtros.estado || "") ? "selected" : ""}>
+                      ${v === "pendiente" ? "Pendiente" : v === "aprobada" ? "Aprobada" : "Rechazada"}
+                    </option>
+                  `).join("")}
+                </select>
+              </th>
+
               <th>Acciones</th>
             </tr>
 
@@ -7367,13 +7506,9 @@
                           </button>
 
                           ${
-                            modo ===
-                            "trabajador"
+                            modo === "trabajador"
                             &&
-                            normEstado(
-                              s.estado
-                            ) ===
-                            "pendiente"
+                            normEstado(s.estado) === "pendiente"
                               ?
                                 `
                                   <button
@@ -7390,18 +7525,13 @@
                                     Eliminar
                                   </button>
                                 `
-                              :
-                                ""
+                              : ""
                           }
 
                           ${
-                            modo ===
-                            "supervisor"
+                            modo === "supervisor"
                             &&
-                            normEstado(
-                              s.estado
-                            ) ===
-                            "pendiente"
+                            normEstado(s.estado) === "pendiente"
                               ?
                                 `
                                   <button
@@ -7418,8 +7548,7 @@
                                     Rechazar
                                   </button>
                                 `
-                              :
-                                ""
+                              : ""
                           }
 
                         </div>
@@ -7428,8 +7557,7 @@
 
                     </tr>
                   `
-              )
-              .join("")
+              ).join("")
             }
 
           </tbody>
@@ -8256,134 +8384,109 @@
     const arr =
       await cargarSolicitudesSupervisor();
 
-
     const lista =
       arr.filter(
         x =>
           pendientes
-            ?
-              normEstado(
-                x.estado
-              ) ===
-              "pendiente"
-            :
-              normEstado(
-                x.estado
-              ) !==
-              "pendiente"
+            ? normEstado(x.estado) === "pendiente"
+            : normEstado(x.estado) !== "pendiente"
       );
 
+    const filtros = {
+      trabajador: "",
+      mes: "",
+      anio: "",
+      tipo: "",
+      estado: ""
+    };
 
-    $("contenidoModulo")
-      .innerHTML =
-        `
-          <div class="bloque">
+    const aplicar = () => {
 
-            <div class="grid2">
+      const filtrada =
+        lista.filter(s => {
 
-              <div>
+          const trabajador =
+            String(s.nombreCompletoFiltro || nombreCompleto(s) || "").trim();
 
-                <label>
-                  Buscar trabajador
-                </label>
+          const fecha =
+            String(s.fechaInicio || "");
 
-                <input
-                  id="supFiltroNombre"
-                  type="search"
-                  placeholder="Escribe nombre o apellido..."
-                  autocomplete="off"
-                >
+          const tipo =
+            String(s.tipoFormulario || "").trim();
 
-                <div class="nota">
-                  Se muestran todas las solicitudes. Usa este campo para filtrar por trabajador.
-                </div>
+          const estado =
+            normEstado(s.estado);
 
-              </div>
-
-              <div class="mensaje mensajeInfo" style="margin:0;align-self:end">
-                <b>${lista.length}</b>
-                solicitud${lista.length === 1 ? "" : "es"} encontrada${lista.length === 1 ? "" : "s"}.
-              </div>
-
-            </div>
-
-          </div>
-
-          <div id="supTabla"></div>
-        `;
-
-
-    const pintar =
-      () => {
-
-        const texto =
-          normalizarTexto(
-            $("supFiltroNombre")?.value || ""
+          return (
+            !filtros.trabajador ||
+            trabajador === filtros.trabajador
+          ) && (
+            !filtros.mes ||
+            fecha.startsWith(filtros.mes)
+          ) && (
+            !filtros.anio ||
+            fecha.startsWith(filtros.anio)
+          ) && (
+            !filtros.tipo ||
+            tipo === filtros.tipo
+          ) && (
+            !filtros.estado ||
+            estado === filtros.estado
           );
+        });
 
+      $("supTabla").innerHTML =
+        tablaSolicitudes(
+          filtrada,
+          pendientes ? "supervisor" : "historial",
+          filtros
+        );
 
-        const filtrada =
-          !texto
-            ? lista
-            : lista.filter(
-                s => {
-
-                  const nombre =
-                    normalizarTexto(
-                      nombreCompleto(s)
-                    );
-
-                  const numeroPersonal =
-                    normalizarTexto(
-                      s.NumeroPersonal || ""
-                    );
-
-                  const rut =
-                    normalizarTexto(
-                      s.Rut || ""
-                    );
-
-                  return (
-                    nombre.includes(texto)
-                    ||
-                    numeroPersonal.includes(texto)
-                    ||
-                    rut.includes(texto)
-                  );
-                }
-              );
-
-
-        $("supTabla")
-          .innerHTML =
-            tablaSolicitudes(
-              filtrada,
-              pendientes
-                ? "supervisor"
-                : "historial"
-            );
-
-
-        const contador =
-          $("supFiltroNombre")
-            ?.closest(".grid2")
-            ?.querySelector(".mensajeInfo");
-
-        if (contador) {
-          contador.innerHTML =
-            `<b>${filtrada.length}</b> solicitud${filtrada.length === 1 ? "" : "es"} encontrada${filtrada.length === 1 ? "" : "s"}.`;
-        }
+      const conectar = (id, clave) => {
+        $(id)?.addEventListener("change", e => {
+          filtros[clave] = e.target.value;
+          aplicar();
+        });
       };
 
+      conectar("filtroTablaTrabajador", "trabajador");
+      conectar("filtroTablaMes", "mes");
+      conectar("filtroTablaAnio", "anio");
+      conectar("filtroTablaTipo", "tipo");
+      conectar("filtroTablaEstado", "estado");
 
-    $("supFiltroNombre")
-      ?.addEventListener(
-        "input",
-        pintar
-      );
+      const contador = $("supContadorFiltros");
+      if (contador) {
+        contador.textContent =
+          `${filtrada.length} solicitud${filtrada.length === 1 ? "" : "es"}`;
+      }
+    };
 
+    $("contenidoModulo").innerHTML = `
+      <div id="supFiltroContenedor" class="filtroTablaResumen">
+        <span id="supContadorFiltros">${lista.length} solicitudes</span>
+        <button
+          type="button"
+          class="btn btnSecundario btnLimpiarFiltros"
+          id="supLimpiarFiltros"
+        >
+          Limpiar filtros
+        </button>
+      </div>
 
-    pintar();
+      <div id="supTabla"></div>
+    `;
+
+    $("supLimpiarFiltros")?.addEventListener("click", () => {
+      filtros.trabajador = "";
+      filtros.mes = "";
+      filtros.anio = "";
+      filtros.tipo = "";
+      filtros.estado = "";
+      aplicar();
+    });
+
+    aplicar();
   }
 
 
