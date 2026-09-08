@@ -5295,10 +5295,110 @@
   }
 
 
+  function emergenciaFueraPermanencia(
+    fechaInicio,
+    horaInicio,
+    motivoTrabajo = ""
+  ) {
+
+    if (
+      motivoTrabajo !== "Emergencia"
+    ) {
+      return false;
+    }
+
+
+    const solicitudTemporal = {
+
+      fechaInicio,
+      horaInicio,
+
+      Nombre:
+        perfilActual?.Nombre || "",
+
+      Apellido:
+        perfilActual?.Apellido || "",
+
+      trabajadorUid:
+        usuarioActual?.uid || "",
+
+      correoTrabajador:
+        usuarioActual?.email || ""
+    };
+
+
+    const domingo =
+      domingoReferenciaSolicitud(
+        solicitudTemporal
+      );
+
+
+    const permanencia =
+      domingo
+        ? cachePermanencias.get(domingo) || null
+        : null;
+
+
+    const estaEnPermanencia =
+      !!permanencia
+      &&
+      CAMPOS_PERMANENCIA.some(
+        campo =>
+          personaCoincidePermanencia(
+            permanencia.asignaciones?.[campo.clave],
+            solicitudTemporal
+          )
+      );
+
+
+    return !estaEnPermanencia;
+  }
+
+
+  function esExtension100(
+    fechaInicio,
+    horaInicio,
+    diaTrabajo,
+    tieneExtension
+  ) {
+
+    if (!tieneExtension) {
+      return false;
+    }
+
+
+    const fecha =
+      new Date(
+        inicioDia(fechaInicio)
+      );
+
+    const dow =
+      fecha.getUTCDay();
+
+    const esFinDeSemanaOferiado =
+      dow === 6
+      ||
+      dow === 0
+      ||
+      diaTrabajo === "Feriado";
+
+    if (!esFinDeSemanaOferiado) {
+      return false;
+    }
+
+
+    return String(
+      horaInicio || ""
+    ).slice(0, 5) < "08:00";
+  }
+
+
   function calcularNormal(
     ini,
     fin,
-    origen
+    origen,
+    fechaInicio,
+    motivoTrabajo = ""
   ) {
 
     if (
@@ -5314,24 +5414,46 @@
     const t = [];
 
 
+    const fueraPermanencia =
+      emergenciaFueraPermanencia(
+        fechaInicio,
+        horaDesdeMs(ini),
+        motivoTrabajo
+      );
+
+
+    if (fueraPermanencia) {
+
+      interseccion(
+        t,
+        ini,
+        fin,
+        ini,
+        fin,
+        100,
+        origen
+      );
+
+      return validarCobertura(
+        ini,
+        fin,
+        t
+      );
+    }
+
+
     const primer =
       Math.floor(
         ini / DIA
       )
-      *
-      DIA;
+      * DIA;
 
 
     const ultimo =
       Math.floor(
-        (
-          fin - 1
-        )
-        /
-        DIA
+        (fin - 1) / DIA
       )
-      *
-      DIA;
+      * DIA;
 
 
     for (
@@ -5341,10 +5463,7 @@
     ) {
 
       const dow =
-        new Date(
-          dia
-        )
-        .getUTCDay();
+        new Date(dia).getUTCDay();
 
 
       /* 00:00 a 08:00 = 100% */
@@ -5372,15 +5491,7 @@
           t,
           ini,
           fin,
-          dia
-          +
-          (
-            17 * 60
-            +
-            30
-          )
-          *
-          MINUTO,
+          dia + (17 * 60 + 30) * MINUTO,
           dia + DIA,
           50,
           origen
@@ -5398,15 +5509,7 @@
           t,
           ini,
           fin,
-          dia
-          +
-          (
-            14 * 60
-            +
-            30
-          )
-          *
-          MINUTO,
+          dia + (14 * 60 + 30) * MINUTO,
           dia + DIA,
           50,
           origen
@@ -5424,9 +5527,7 @@
           t,
           ini,
           fin,
-          dia
-          +
-          8 * 60 * MINUTO,
+          dia + 8 * 60 * MINUTO,
           dia + DIA,
           50,
           origen
@@ -5448,7 +5549,10 @@
     fin,
     origen,
     fechaEspecial,
-    tipoDia
+    tipoDia,
+    motivoTrabajo = "",
+    tieneExtension = false,
+    horaInicioFaena = ""
   ) {
 
     if (
@@ -5462,16 +5566,11 @@
 
 
     if (
-      tipoDia ===
-      "Domingo"
+      tipoDia === "Domingo"
       &&
       new Date(
-        inicioDia(
-          fechaEspecial
-        )
-      )
-      .getUTCDay() !==
-      0
+        inicioDia(fechaEspecial)
+      ).getUTCDay() !== 0
     ) {
 
       throw new Error(
@@ -5483,28 +5582,65 @@
     const t = [];
 
 
+    /*
+      Extensión de faena:
+      Si la faena comienza antes de las 08:00 y el día de
+      inicio es sábado, domingo o feriado, toda la faena
+      continua se considera al 100%.
+
+      No se solicita un segundo horario de extensión.
+      La fecha/hora de término de la jornada principal ya
+      determina hasta dónde se extiende la faena.
+    */
+
+    const extension100 =
+      esExtension100(
+        fechaEspecial,
+        horaInicioFaena || horaDesdeMs(ini),
+        tipoDia === "Feriado"
+          ? "Feriado"
+          : "",
+        tieneExtension
+      );
+
+
+    if (extension100) {
+
+      interseccion(
+        t,
+        ini,
+        fin,
+        ini,
+        fin,
+        100,
+        origen
+      );
+
+      return validarCobertura(
+        ini,
+        fin,
+        t
+      );
+    }
+
+
     const primer =
       Math.floor(
         ini / DIA
       )
-      *
-      DIA;
+      * DIA;
 
 
     const ultimo =
       Math.floor(
-        (
-          fin - 1
-        )
-        /
-        DIA
+        (fin - 1) / DIA
       )
-      *
-      DIA;
+      * DIA;
 
 
     /*
       00:00 a 08:00 = 100%
+      Se aplica para cada día que cruce la solicitud.
     */
 
     for (
@@ -5528,23 +5664,43 @@
     /*
       Domingo / feriado
       08:00 a 24:00 = 75%
+
+      Se aplica al día correspondiente, incluso cuando la
+      solicitud cruza medianoche.
     */
 
-    const esp =
-      inicioDia(
-        fechaEspecial
+    for (
+      let dia = primer;
+      dia <= ultimo;
+      dia += DIA
+    ) {
+
+      const dow =
+        new Date(dia).getUTCDay();
+
+      const correspondeEspecial =
+        dow === 0
+        ||
+        (
+          dia === inicioDia(fechaEspecial)
+          &&
+          tipoDia === "Feriado"
+        );
+
+      if (!correspondeEspecial) {
+        continue;
+      }
+
+      interseccion(
+        t,
+        ini,
+        fin,
+        dia + 8 * 60 * MINUTO,
+        dia + DIA,
+        75,
+        origen
       );
-
-
-    interseccion(
-      t,
-      ini,
-      fin,
-      esp + 8 * 60 * MINUTO,
-      esp + DIA,
-      75,
-      origen
-    );
+    }
 
 
     return validarCobertura(
@@ -5672,44 +5828,29 @@
 
 
     const ini =
-      crearMomento(
-        fIni,
-        hIni
-      );
-
+      crearMomento(fIni, hIni);
 
     const fin =
-      crearMomento(
-        fFin,
-        hFin
+      crearMomento(fFin, hFin);
+
+
+    if (fin <= ini) {
+      throw new Error(
+        "La fecha y hora de término deben ser posteriores al inicio."
       );
-
-
-    let principal;
+    }
 
 
     const diaTrabajo =
-      $("fDiaTrabajo")?.value
-      ||
-      "";
+      $("fDiaTrabajo")?.value || "";
 
     const fechaReferencia =
-      new Date(
-        inicioDia(
-          fIni
-        )
-      );
+      new Date(inicioDia(fIni));
 
     const esDomingo =
       fechaReferencia.getUTCDay() === 0;
 
-    /*
-      El domingo NO se selecciona manualmente.
-      Se determina exclusivamente por la fecha.
 
-      Si no es domingo, el usuario debe indicar
-      si corresponde a día Normal o Feriado.
-    */
     if (
       !esDomingo
       &&
@@ -5721,13 +5862,21 @@
       );
     }
 
+
     const esFeriado =
-      diaTrabajo ===
-      "Feriado";
+      diaTrabajo === "Feriado";
 
     const usarEspecial =
-      esDomingo ||
-      esFeriado;
+      esDomingo || esFeriado;
+
+    const tieneExtension =
+      $("fTieneExtension")?.checked || false;
+
+    const motivoTrabajo =
+      $("fMotivoTrabajo")?.value || "";
+
+
+    let principal;
 
 
     if (usarEspecial) {
@@ -5738,11 +5887,10 @@
           fin,
           "Jornada principal",
           fIni,
-          esDomingo
-            ?
-              "Domingo"
-            :
-              "Feriado"
+          esDomingo ? "Domingo" : "Feriado",
+          motivoTrabajo,
+          tieneExtension,
+          hIni
         );
 
     }
@@ -5752,216 +5900,52 @@
         calcularNormal(
           ini,
           fin,
-          "Jornada principal"
+          "Jornada principal",
+          fIni,
+          motivoTrabajo
         );
     }
 
 
-    let ext =
-      null;
-
-    let fechaExtIni =
-      "";
-
-    let fechaExtFin =
-      "";
-
-    let iniExt =
-      null;
-
-    let finExt =
-      null;
-
-
-    if (
-      $("fTieneExtension").checked
-    ) {
-
-      const mh =
-        $("fMotivoExtension").value;
-
-      const hi =
-        $("fHoraInicioExtension").value;
-
-      const hf =
-        $("fHoraTerminoExtension").value;
-
-
-      if (
-        !mh
-        ||
-        !hi
-        ||
-        !hf
-      ) {
-
-        throw new Error(
-          "Completa motivo y horas de la extensión."
-        );
-      }
-
-
-      fechaExtIni =
-        fFin;
-
-
-      iniExt =
-        crearMomento(
-          fechaExtIni,
-          hi
-        );
-
-
-      if (
-        iniExt < fin
-      ) {
-
-        fechaExtIni =
-          sumarDias(
-            fechaExtIni,
-            1
-          );
-
-
-        iniExt =
-          crearMomento(
-            fechaExtIni,
-            hi
-          );
-      }
-
-
-      fechaExtFin =
-        fechaExtIni;
-
-
-      finExt =
-        crearMomento(
-          fechaExtFin,
-          hf
-        );
-
-
-      if (
-        finExt <=
-        iniExt
-      ) {
-
-        fechaExtFin =
-          sumarDias(
-            fechaExtFin,
-            1
-          );
-
-
-        finExt =
-          crearMomento(
-            fechaExtFin,
-            hf
-          );
-      }
-
-
-      if (usarEspecial) {
-
-        ext =
-          calcularEspecial(
-            iniExt,
-            finExt,
-            "Extensión",
-            fIni,
-            esDomingo
-              ?
-                "Domingo"
-              :
-                "Feriado"
-          );
-
-      }
-      else {
-
-        ext =
-          calcularNormal(
-            iniExt,
-            finExt,
-            "Extensión"
-          );
-      }
-    }
-
-
-    const tramos = [
-      ...principal.tramos,
-      ...(
-        ext?.tramos
-        ||
-        []
-      )
-    ];
-
-
-    const minutos50 =
-      principal.minutos50
-      +
-      (
-        ext?.minutos50
-        ||
-        0
-      );
-
-
-    const minutos75 =
-      principal.minutos75
-      +
-      (
-        ext?.minutos75
-        ||
-        0
-      );
-
-
-    const minutos100 =
-      principal.minutos100
-      +
-      (
-        ext?.minutos100
-        ||
-        0
-      );
-
-
-    const minutosFuera =
-      principal.minutosFuera
-      +
-      (
-        ext?.minutosFuera
-        ||
-        0
-      );
-
+    /*
+      La extensión ya no solicita un segundo horario.
+      La casilla indica que la jornada principal continuó
+      y la regla de extensión se aplica sobre todo el período.
+    */
 
     return {
 
-      tramos,
+      tramos:
+        principal.tramos,
 
-      minutos50,
+      minutos50:
+        principal.minutos50,
 
-      minutos75,
+      minutos75:
+        principal.minutos75,
 
-      minutos100,
+      minutos100:
+        principal.minutos100,
 
       minutosTotales:
-        minutos50
+        principal.minutos50
         +
-        minutos75
+        principal.minutos75
         +
-        minutos100,
+        principal.minutos100,
 
-      minutosFuera,
+      minutosFuera:
+        principal.minutosFuera,
 
-      fechaExtIni,
+      fechaExtIni:
+        tieneExtension
+          ? fIni
+          : "",
 
-      fechaExtFin
+      fechaExtFin:
+        tieneExtension
+          ? fFin
+          : ""
     };
   }
 
@@ -6074,6 +6058,12 @@
       data,
       id
     );
+
+    /* Cargar permanencia para que el cálculo visual
+       pueda distinguir emergencia dentro/fuera de turno. */
+    cargarPermanencias()
+      .then(() => renderCalculo("Normal"))
+      .catch(err => console.warn("[HHEE] No fue posible cargar permanencias para el cálculo:", err));
   }
 
 
@@ -6401,85 +6391,13 @@
             }"
           >
 
-            <div class="grid3">
-
-              <div>
-
-                <label>
-                  Motivo extensión *
-                </label>
-
-                <select id="fMotivoExtension">
-
-                  <option value="">
-                    Seleccione
-                  </option>
-
-                  ${
-                    [
-                      "Programado",
-                      "Emergencia"
-                    ]
-                    .map(
-                      x =>
-                        `
-                          <option
-                            ${
-                              data?.motivoExtension ===
-                              x
-                                ?
-                                  "selected"
-                                :
-                                  ""
-                            }
-                          >
-                            ${x}
-                          </option>
-                        `
-                    )
-                    .join("")
-                  }
-
-                </select>
-
-              </div>
-
-
-              <div>
-
-                <label>
-                  Hora inicio extensión *
-                </label>
-
-                <input
-                  id="fHoraInicioExtension"
-                  type="time"
-                  value="${esc(data?.horaInicioExtension || "")}"
-                >
-
-              </div>
-
-
-              <div>
-
-                <label>
-                  Hora término extensión *
-                </label>
-
-                <input
-                  id="fHoraTerminoExtension"
-                  type="time"
-                  value="${esc(data?.horaTerminoExtension || "")}"
-                >
-
-              </div>
-
+            <div class="nota">
+              La extensión de faena se interpreta automáticamente como continuidad de la jornada.
+              Para sábado, domingo o feriado, si la faena comenzó antes de las 08:00, el período completo se considera al 100%.
+              No es necesario ingresar un segundo horario.
             </div>
 
           </div>
-
-        </div>
-
 
         <div class="bloque">
 
@@ -6534,8 +6452,7 @@
       "fHoraInicio",
       "fHoraTermino",
       "fDiaTrabajo",
-      "fHoraInicioExtension",
-      "fHoraTerminoExtension"
+      "fMotivoTrabajo"
     ];
 
 
@@ -6571,15 +6488,6 @@
         }
       );
 
-
-    $("fMotivoExtension")
-      .addEventListener(
-        "change",
-        () =>
-          renderCalculo(
-            tipo
-          )
-      );
 
 
     $("fCancelar")
@@ -6659,6 +6567,14 @@
 
 
     try {
+
+      /*
+        La permanencia es necesaria para determinar
+        si una emergencia corresponde al 100%.
+        Se carga antes de calcular para no depender
+        de que el usuario haya abierto el módulo Permanencia.
+      */
+      await cargarPermanencias();
 
       c =
         calcularSolicitudDesdeCampos(
@@ -6860,7 +6776,7 @@
         motivoExtension:
           $("fTieneExtension").checked
             ?
-              $("fMotivoExtension").value
+              "Emergencia"
             :
               "",
 
@@ -6879,18 +6795,10 @@
               "",
 
         horaInicioExtension:
-          $("fTieneExtension").checked
-            ?
-              $("fHoraInicioExtension").value
-            :
-              "",
+          "",
 
         horaTerminoExtension:
-          $("fTieneExtension").checked
-            ?
-              $("fHoraTerminoExtension").value
-            :
-              "",
+          "",
 
         minutos50:
           c.minutos50,
