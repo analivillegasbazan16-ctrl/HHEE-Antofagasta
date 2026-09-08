@@ -5673,12 +5673,19 @@
     const dow =
       fecha.getUTCDay();
 
+    /*
+      La extensión al 100% aplica si la faena comienza antes de las
+      08:00 y el día de inicio es: sábado, domingo o un feriado
+      seleccionado explícitamente en el formulario.
+    */
     const esFinDeSemanaOferiado =
       dow === 6
       ||
       dow === 0
       ||
-      diaTrabajo === "Feriado";
+      String(diaTrabajo || "").trim().toLowerCase() === "feriado"
+      ||
+      String(diaTrabajo || "").trim().toLowerCase() === "festivo";
 
     if (!esFinDeSemanaOferiado) {
       return false;
@@ -6244,14 +6251,33 @@
     const esFeriado =
       diaTrabajo === "Feriado";
 
-    const usarEspecial =
-      esDomingo || esFeriado;
-
     const tieneExtension =
       $("fTieneExtension")?.checked || false;
 
     const motivoTrabajo =
       $("fMotivoTrabajo")?.value || "";
+
+    /*
+      Una extensión iniciada antes de las 08:00 en sábado, domingo
+      o feriado debe tratarse como continuidad de la faena completa
+      al 100%. Por eso, aunque un sábado no sea "Domingo/Feriado"
+      en el selector del formulario, debe entrar al cálculo especial
+      cuando esta condición se cumple.
+    */
+    const extension100 =
+      esExtension100(
+        fIni,
+        hIni,
+        esFeriado ? "Feriado" : "",
+        tieneExtension
+      );
+
+    const usarEspecial =
+      esDomingo
+      ||
+      esFeriado
+      ||
+      extension100;
 
 
     let principal;
@@ -6265,7 +6291,7 @@
           fin,
           "Jornada principal",
           fIni,
-          esDomingo ? "Domingo" : "Feriado",
+          esDomingo ? "Domingo" : (esFeriado ? "Feriado" : diaTrabajo),
           motivoTrabajo,
           tieneExtension,
           hIni
