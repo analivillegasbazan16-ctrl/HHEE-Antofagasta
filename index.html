@@ -5393,6 +5393,107 @@
   }
 
 
+  function calcularEmergenciaDiaHabil(
+    ini,
+    fin,
+    origen
+  ) {
+
+    if (fin <= ini) {
+      throw new Error(
+        "El término debe ser posterior al inicio."
+      );
+    }
+
+    const t = [];
+
+    const primer =
+      Math.floor(ini / DIA) * DIA;
+
+    const diaInicio =
+      primer;
+
+    const dowInicio =
+      new Date(diaInicio).getUTCDay();
+
+    /*
+      Emergencia iniciada en día hábil (lunes a viernes):
+
+      - Antes del inicio de la jornada normal: 100%.
+      - Dentro de la jornada normal: no genera HHEE.
+      - Desde el término de la jornada normal hasta las 24:00: 50%.
+      - Desde las 24:00 en adelante: 100%, hasta el término de
+        la emergencia, incluso si continúa durante la jornada normal.
+
+      Jornada considerada por las reglas vigentes:
+      lunes a jueves 08:00–17:30
+      viernes        08:00–14:30
+    */
+
+    if (dowInicio >= 1 && dowInicio <= 5) {
+
+      const inicioJornada =
+        diaInicio + 8 * 60 * MINUTO;
+
+      const terminoJornada =
+        diaInicio + (
+          dowInicio === 5
+            ? (14 * 60 + 30)
+            : (17 * 60 + 30)
+        ) * MINUTO;
+
+      /* Antes de la jornada normal = 100% */
+      interseccion(
+        t,
+        ini,
+        fin,
+        diaInicio,
+        inicioJornada,
+        100,
+        origen
+      );
+
+      /* Después del término de jornada y hasta medianoche = 50% */
+      interseccion(
+        t,
+        ini,
+        fin,
+        terminoJornada,
+        diaInicio + DIA,
+        50,
+        origen
+      );
+
+      /*
+        Desde las 00:00 del día siguiente hasta el término de la
+        emergencia = 100%, sin volver a descontar la jornada normal.
+      */
+      interseccion(
+        t,
+        ini,
+        fin,
+        diaInicio + DIA,
+        fin,
+        100,
+        origen
+      );
+
+      return validarCobertura(
+        ini,
+        fin,
+        t
+      );
+    }
+
+    /* Fallback para uso directo: si no es día hábil, no aplica esta regla. */
+    return validarCobertura(
+      ini,
+      fin,
+      t
+    );
+  }
+
+
   function calcularNormal(
     ini,
     fin,
@@ -5401,19 +5502,42 @@
     motivoTrabajo = ""
   ) {
 
-    if (
-      fin <= ini
-    ) {
-
+    if (fin <= ini) {
       throw new Error(
         "El término debe ser posterior al inicio."
       );
     }
 
+    /*
+      Emergencia iniciada en día hábil:
+      se aplica la regla específica del procedimiento de emergencia.
+      No se utiliza aquí la regla "fuera de permanencia = 100%", porque
+      en día hábil la condición exige distinguir jornada normal, 50% y
+      100% después de medianoche.
+    */
+    const dowInicio =
+      new Date(inicioDia(fechaInicio)).getUTCDay();
+
+    if (
+      motivoTrabajo === "Emergencia"
+      &&
+      dowInicio >= 1
+      &&
+      dowInicio <= 5
+    ) {
+      return calcularEmergenciaDiaHabil(
+        ini,
+        fin,
+        origen
+      );
+    }
 
     const t = [];
 
-
+    /*
+      Para emergencias fuera de permanencia en fin de semana/feriado,
+      se mantiene la regla acordada: toda la jornada al 100%.
+    */
     const fueraPermanencia =
       emergenciaFueraPermanencia(
         fechaInicio,
@@ -5421,9 +5545,7 @@
         motivoTrabajo
       );
 
-
     if (fueraPermanencia) {
-
       interseccion(
         t,
         ini,
@@ -5441,20 +5563,11 @@
       );
     }
 
-
     const primer =
-      Math.floor(
-        ini / DIA
-      )
-      * DIA;
-
+      Math.floor(ini / DIA) * DIA;
 
     const ultimo =
-      Math.floor(
-        (fin - 1) / DIA
-      )
-      * DIA;
-
+      Math.floor((fin - 1) / DIA) * DIA;
 
     for (
       let dia = primer;
@@ -5465,9 +5578,7 @@
       const dow =
         new Date(dia).getUTCDay();
 
-
       /* 00:00 a 08:00 = 100% */
-
       interseccion(
         t,
         ini,
@@ -5478,15 +5589,8 @@
         origen
       );
 
-
       /* Lunes a jueves 17:30 a 24:00 = 50% */
-
-      if (
-        dow >= 1
-        &&
-        dow <= 4
-      ) {
-
+      if (dow >= 1 && dow <= 4) {
         interseccion(
           t,
           ini,
@@ -5498,13 +5602,8 @@
         );
       }
 
-
       /* Viernes 14:30 a 24:00 = 50% */
-
-      if (
-        dow === 5
-      ) {
-
+      if (dow === 5) {
         interseccion(
           t,
           ini,
@@ -5516,13 +5615,8 @@
         );
       }
 
-
       /* Sábado 08:00 a 24:00 = 50% */
-
-      if (
-        dow === 6
-      ) {
-
+      if (dow === 6) {
         interseccion(
           t,
           ini,
@@ -5534,7 +5628,6 @@
         );
       }
     }
-
 
     return validarCobertura(
       ini,
@@ -5555,57 +5648,36 @@
     horaInicioFaena = ""
   ) {
 
-    if (
-      fin <= ini
-    ) {
-
+    if (fin <= ini) {
       throw new Error(
         "El término debe ser posterior al inicio."
       );
     }
 
-
     if (
       tipoDia === "Domingo"
       &&
-      new Date(
-        inicioDia(fechaEspecial)
-      ).getUTCDay() !== 0
+      new Date(inicioDia(fechaEspecial)).getUTCDay() !== 0
     ) {
-
       throw new Error(
         "La fecha seleccionada no corresponde a domingo."
       );
     }
 
-
     const t = [];
 
-
     /*
-      Extensión de faena:
-      Si la faena comienza antes de las 08:00 y el día de
-      inicio es sábado, domingo o feriado, toda la faena
-      continua se considera al 100%.
-
-      No se solicita un segundo horario de extensión.
-      La fecha/hora de término de la jornada principal ya
-      determina hasta dónde se extiende la faena.
+      Emergencia fuera de permanencia en domingo/feriado = 100% toda
+      la jornada. Esta comprobación se realiza antes del 75% especial.
     */
-
-    const extension100 =
-      esExtension100(
+    const fueraPermanencia =
+      emergenciaFueraPermanencia(
         fechaEspecial,
         horaInicioFaena || horaDesdeMs(ini),
-        tipoDia === "Feriado"
-          ? "Feriado"
-          : "",
-        tieneExtension
+        motivoTrabajo
       );
 
-
-    if (extension100) {
-
+    if (fueraPermanencia) {
       interseccion(
         t,
         ini,
@@ -5623,32 +5695,50 @@
       );
     }
 
+    /*
+      Extensión de faena:
+      Si la faena comienza antes de las 08:00 y el día de inicio es
+      sábado, domingo o feriado, toda la faena continua se considera
+      al 100%. No se solicita un segundo horario.
+    */
+    const extension100 =
+      esExtension100(
+        fechaEspecial,
+        horaInicioFaena || horaDesdeMs(ini),
+        tipoDia === "Feriado" ? "Feriado" : "",
+        tieneExtension
+      );
+
+    if (extension100) {
+      interseccion(
+        t,
+        ini,
+        fin,
+        ini,
+        fin,
+        100,
+        origen
+      );
+
+      return validarCobertura(
+        ini,
+        fin,
+        t
+      );
+    }
 
     const primer =
-      Math.floor(
-        ini / DIA
-      )
-      * DIA;
-
+      Math.floor(ini / DIA) * DIA;
 
     const ultimo =
-      Math.floor(
-        (fin - 1) / DIA
-      )
-      * DIA;
+      Math.floor((fin - 1) / DIA) * DIA;
 
-
-    /*
-      00:00 a 08:00 = 100%
-      Se aplica para cada día que cruce la solicitud.
-    */
-
+    /* 00:00 a 08:00 = 100% */
     for (
       let dia = primer;
       dia <= ultimo;
       dia += DIA
     ) {
-
       interseccion(
         t,
         ini,
@@ -5660,21 +5750,12 @@
       );
     }
 
-
-    /*
-      Domingo / feriado
-      08:00 a 24:00 = 75%
-
-      Se aplica al día correspondiente, incluso cuando la
-      solicitud cruza medianoche.
-    */
-
+    /* Domingo / feriado 08:00 a 24:00 = 75% */
     for (
       let dia = primer;
       dia <= ultimo;
       dia += DIA
     ) {
-
       const dow =
         new Date(dia).getUTCDay();
 
@@ -5701,7 +5782,6 @@
         origen
       );
     }
-
 
     return validarCobertura(
       ini,
@@ -8196,14 +8276,114 @@
 
     $("contenidoModulo")
       .innerHTML =
-        tablaSolicitudes(
-          lista,
-          pendientes
-            ?
-              "supervisor"
-            :
-              "historial"
-        );
+        `
+          <div class="bloque">
+
+            <div class="grid2">
+
+              <div>
+
+                <label>
+                  Buscar trabajador
+                </label>
+
+                <input
+                  id="supFiltroNombre"
+                  type="search"
+                  placeholder="Escribe nombre o apellido..."
+                  autocomplete="off"
+                >
+
+                <div class="nota">
+                  Se muestran todas las solicitudes. Usa este campo para filtrar por trabajador.
+                </div>
+
+              </div>
+
+              <div class="mensaje mensajeInfo" style="margin:0;align-self:end">
+                <b>${lista.length}</b>
+                solicitud${lista.length === 1 ? "" : "es"} encontrada${lista.length === 1 ? "" : "s"}.
+              </div>
+
+            </div>
+
+          </div>
+
+          <div id="supTabla"></div>
+        `;
+
+
+    const pintar =
+      () => {
+
+        const texto =
+          normalizarTexto(
+            $("supFiltroNombre")?.value || ""
+          );
+
+
+        const filtrada =
+          !texto
+            ? lista
+            : lista.filter(
+                s => {
+
+                  const nombre =
+                    normalizarTexto(
+                      nombreCompleto(s)
+                    );
+
+                  const numeroPersonal =
+                    normalizarTexto(
+                      s.NumeroPersonal || ""
+                    );
+
+                  const rut =
+                    normalizarTexto(
+                      s.Rut || ""
+                    );
+
+                  return (
+                    nombre.includes(texto)
+                    ||
+                    numeroPersonal.includes(texto)
+                    ||
+                    rut.includes(texto)
+                  );
+                }
+              );
+
+
+        $("supTabla")
+          .innerHTML =
+            tablaSolicitudes(
+              filtrada,
+              pendientes
+                ? "supervisor"
+                : "historial"
+            );
+
+
+        const contador =
+          $("supFiltroNombre")
+            ?.closest(".grid2")
+            ?.querySelector(".mensajeInfo");
+
+        if (contador) {
+          contador.innerHTML =
+            `<b>${filtrada.length}</b> solicitud${filtrada.length === 1 ? "" : "es"} encontrada${filtrada.length === 1 ? "" : "s"}.`;
+        }
+      };
+
+
+    $("supFiltroNombre")
+      ?.addEventListener(
+        "input",
+        pintar
+      );
+
+
+    pintar();
   }
 
 
