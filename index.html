@@ -135,11 +135,25 @@
       width:40px;
       height:40px;
       border-radius:11px;
+      border:0;
       background:var(--azulClaro);
       display:grid;
       place-items:center;
       font-size:20px;
       flex:0 0 auto;
+      cursor:pointer;
+      padding:0;
+      transition:transform .15s ease,box-shadow .15s ease;
+    }
+
+    .notifIcon:hover{
+      transform:translateY(-1px);
+      box-shadow:0 5px 14px rgba(0,59,113,.12);
+    }
+
+    .notifIcon:focus-visible{
+      outline:3px solid rgba(0,103,163,.2);
+      outline-offset:2px;
     }
 
     .notifTexto strong{
@@ -583,6 +597,62 @@
       height:34px;
       border-radius:9px;
       font-size:17px;
+    }
+
+    .detalleNotificacion{
+      display:grid;
+      gap:12px;
+    }
+
+    .diagAviso{
+      padding:11px 13px;
+      border-radius:10px;
+      background:#f7fbfe;
+      border:1px solid #d7e7f1;
+      color:#47647d;
+      font-size:12px;
+      line-height:1.45;
+    }
+
+    .diagLista{
+      display:grid;
+      gap:7px;
+    }
+
+    .diagFila{
+      display:grid;
+      grid-template-columns:24px minmax(130px,1fr) minmax(150px,1.4fr);
+      gap:8px;
+      align-items:start;
+      padding:9px 10px;
+      border:1px solid var(--borde);
+      border-radius:9px;
+      background:#fff;
+      font-size:11px;
+    }
+
+    .diagIcono{
+      font-size:14px;
+      line-height:1.2;
+    }
+
+    .diagFila strong{color:#294b67}
+    .diagFila span:last-child{color:var(--gris);line-height:1.35}
+
+    .diagAcciones{
+      display:flex;
+      justify-content:flex-end;
+      gap:8px;
+      margin-top:3px;
+    }
+
+    @media(max-width:560px){
+      .diagFila{
+        grid-template-columns:24px 1fr;
+      }
+      .diagFila span:last-child{
+        grid-column:2;
+      }
     }
 
     .perfil .notifTexto strong{font-size:12px}
@@ -1034,9 +1104,14 @@
 
           <div class="notifInfo">
 
-            <div class="notifIcon">
+            <button
+              id="btnDetalleNotificaciones"
+              class="notifIcon"
+              type="button"
+              aria-label="Ver detalle del estado de las notificaciones"
+              title="Ver detalle de notificaciones">
               🔔
-            </div>
+            </button>
 
             <div class="notifTexto">
               <strong>Notificaciones del celular</strong>
@@ -2224,6 +2299,210 @@
 
   window.cerrarModal =
     cerrarModal;
+
+
+  async function mostrarDetalleNotificaciones() {
+
+    const ios =
+      esIOS();
+
+    const version =
+      ios
+        ? versionIOSActual()
+        : null;
+
+    const modoStandalone =
+      window.matchMedia(
+        "(display-mode: standalone)"
+      ).matches;
+
+    const navigatorStandalone =
+      window.navigator.standalone === true;
+
+    const pwaInstalada =
+      modoStandalone ||
+      navigatorStandalone;
+
+    const secure =
+      window.isSecureContext === true;
+
+    const swDisponible =
+      "serviceWorker" in navigator;
+
+    const pushGlobal =
+      "PushManager" in window;
+
+    let swListo =
+      false;
+
+    let suscripcion =
+      false;
+
+    if (swDisponible) {
+      try {
+        const registro =
+          await navigator.serviceWorker.ready;
+
+        swListo =
+          Boolean(registro);
+
+        if (registro?.pushManager) {
+          suscripcion =
+            Boolean(
+              await registro.pushManager.getSubscription()
+            );
+        }
+      }
+      catch (err) {
+        console.warn(
+          "[HHEE] No se pudo obtener diagnóstico del Service Worker:",
+          err
+        );
+      }
+    }
+
+    const permiso =
+      "Notification" in window
+        ? Notification.permission
+        : "no disponible";
+
+    const compatible =
+      ios
+        ? iosCompatibleConWebPush()
+        : (
+            ("Notification" in window)
+            &&
+            swDisponible
+          );
+
+    let conclusion =
+      "Las notificaciones están disponibles para este dispositivo.";
+
+    if (ios && !pwaInstalada) {
+      conclusion =
+        "HHEE está siendo detectada fuera del modo app. En iPhone, abre HHEE desde el icono de la pantalla de inicio, no desde una pestaña de Safari.";
+    }
+    else if (!secure) {
+      conclusion =
+        "HHEE no está ejecutándose mediante HTTPS, por lo que las notificaciones web no pueden funcionar.";
+    }
+    else if (!swDisponible || !swListo) {
+      conclusion =
+        "El Service Worker de HHEE todavía no está disponible en este dispositivo.";
+    }
+    else if (ios && !compatible) {
+      conclusion =
+        "La versión de iOS detectada no cumple con el requisito mínimo para Web Push.";
+    }
+    else if (permiso === "denied") {
+      conclusion =
+        "Las notificaciones están bloqueadas. Deben habilitarse desde la configuración del dispositivo o del sitio.";
+    }
+    else if (ios && !suscripcion) {
+      conclusion =
+        "El iPhone está listo para Web Push, pero todavía no existe una suscripción activa. Puedes activarla con el botón de notificaciones.";
+    }
+    else if (!ios && !notificacionesActivas) {
+      conclusion =
+        "Este dispositivo todavía no está registrado para recibir notificaciones.";
+    }
+
+    const filas = [
+      [
+        ios ? "📱" : "💻",
+        "Dispositivo",
+        ios
+          ? `iPhone/iPad${version ? ` — iOS ${version.major}.${version.minor}${version.patch != null ? `.${version.patch}` : ""}` : ""}`
+          : "Android / PC / otro navegador"
+      ],
+      [
+        pwaInstalada ? "✅" : "❌",
+        "Modo app (PWA)",
+        pwaInstalada ? "Sí, HHEE está en modo app" : "No, HHEE está en modo navegador"
+      ],
+      [
+        modoStandalone ? "✅" : "❌",
+        "display-mode: standalone",
+        modoStandalone ? "Detectado" : "No detectado"
+      ],
+      [
+        navigatorStandalone ? "✅" : "❌",
+        "navigator.standalone",
+        navigatorStandalone ? "Detectado por iOS/Safari" : "No detectado"
+      ],
+      [
+        secure ? "✅" : "❌",
+        "Conexión segura (HTTPS)",
+        secure ? "Correcta" : "No disponible"
+      ],
+      [
+        swDisponible ? "✅" : "❌",
+        "Service Worker",
+        swDisponible
+          ? (swListo ? "Disponible y listo" : "Disponible, pero aún no está listo")
+          : "No disponible"
+      ],
+      [
+        pushGlobal || ios ? "✅" : "⚠️",
+        "PushManager",
+        pushGlobal
+          ? "Disponible"
+          : (ios ? "Se valida a través del Service Worker" : "No detectado globalmente")
+      ],
+      [
+        permiso === "granted" ? "✅" : (permiso === "denied" ? "❌" : "⚠️"),
+        "Permiso de notificaciones",
+        permiso === "granted"
+          ? "Concedido"
+          : permiso === "denied"
+            ? "Bloqueado"
+            : "Aún no solicitado"
+      ],
+      [
+        suscripcion ? "✅" : "⚠️",
+        "Suscripción Web Push",
+        suscripcion ? "Activa en este dispositivo" : "No existe una suscripción activa"
+      ],
+      [
+        notificacionesActivas ? "✅" : "⚠️",
+        "Estado en HHEE",
+        notificacionesActivas
+          ? `Activo${canalNotificaciones ? ` — canal: ${canalNotificaciones}` : ""}`
+          : "No activo en este momento"
+      ]
+    ];
+
+    modal(`
+      <div class="detalleNotificacion">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+          <h3 style="margin:0">Detalle de notificaciones</h3>
+          <button class="btn btnSecundario" type="button" onclick="cerrarModal()">Cerrar</button>
+        </div>
+
+        <div class="diagAviso">
+          Este detalle aparece al presionar la campana y muestra qué está detectando HHEE en este dispositivo. Es especialmente útil para revisar la instalación de HHEE en iPhone.
+        </div>
+
+        <div class="diagAviso">
+          <strong>Resultado:</strong> ${esc(conclusion)}
+        </div>
+
+        <div class="diagLista">
+          ${filas.map(fila => `
+            <div class="diagFila">
+              <span class="diagIcono">${fila[0]}</span>
+              <strong>${esc(fila[1])}</strong>
+              <span>${esc(fila[2])}</span>
+            </div>
+          `).join("")}
+        </div>
+
+        <div class="diagAcciones">
+          <button class="btn btnSecundario" type="button" onclick="cerrarModal()">Cerrar</button>
+        </div>
+      </div>
+    `);
+  }
 
 
   /* =========================================================
@@ -4203,6 +4482,15 @@
       );
     }
   }
+
+
+  $("btnDetalleNotificaciones")
+    ?.addEventListener(
+      "click",
+      async () => {
+        await mostrarDetalleNotificaciones();
+      }
+    );
 
 
   $("btnNotificaciones")
