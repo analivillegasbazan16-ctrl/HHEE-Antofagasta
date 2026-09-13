@@ -13910,7 +13910,8 @@
               registradas: fila.horasRegistradas,
               bonificacion: fila.bonificacion,
               pagar: fila.horasPagar,
-              solicitudes: fila.solicitudes || []
+              solicitudes: fila.solicitudes || [],
+              solicitudesDetalle: fila.solicitudesDetalle || []
             }
           );
 
@@ -14392,7 +14393,6 @@
             <table class="tabla">
               <thead>
                 <tr>
-                  <th>Solicitud</th>
                   <th>Fecha</th>
                   <th>Horario solicitud</th>
                   <th>Recargo BD.HE</th>
@@ -14409,7 +14409,6 @@
                     d =>
                       `
                         <tr>
-                          <td>${esc(d.solicitud)}</td>
                           <td>${fechaCL(d.fecha)}</td>
                           <td>${esc(d.horario)}</td>
                           <td>${d.recargoBD ? `${d.recargoBD}%` : "—"}</td>
@@ -14983,11 +14982,10 @@
       const body =
         detalles.length
           ? detalles.map(d => [
-              d.solicitud,
               fechaCL(d.fecha),
               d.horario,
-              d.recargo,
-              d.recargoSAP || "—",
+              d.recargoBD ? `${d.recargoBD}%` : "—",
+              d.recargoSAP ? `${d.recargoSAP}%` : "—",
               `${vistaHoras(d.registradas)} h`,
               `${vistaHoras(d.sap)} h`,
               `${vistaHoras(d.diferencia)} h`,
@@ -15000,7 +14998,6 @@
           startY: y + 7,
           margin: { left: 14, right: 14 },
           head: [[
-            "Solicitud",
             "Fecha",
             "Horario solicitud",
             "Recargo BD.HE",
@@ -15025,18 +15022,17 @@
             fontStyle: "bold"
           },
           columnStyles: {
-            0: { cellWidth: 25 },
-            1: { cellWidth: 24 },
-            2: { cellWidth: 28 },
+            0: { cellWidth: 24 },
+            1: { cellWidth: 28 },
+            2: { cellWidth: 22, halign: "center" },
             3: { cellWidth: 22, halign: "center" },
-            4: { cellWidth: 22, halign: "center" },
+            4: { cellWidth: 23, halign: "right" },
             5: { cellWidth: 23, halign: "right" },
             6: { cellWidth: 23, halign: "right" },
-            7: { cellWidth: 23, halign: "right" },
-            8: { cellWidth: 48 }
+            7: { cellWidth: 48 }
           },
           didParseCell(data) {
-            if (data.section === "body" && data.column.index === 8) {
+            if (data.section === "body" && data.column.index === 7) {
               const texto = String(data.cell.raw || "");
               if (texto === "CONFORME") {
                 data.cell.styles.textColor = [24, 134, 91];
