@@ -2042,6 +2042,52 @@
   }
 
 
+  /*
+    SAP: en el formato actual el recargo NO está en la columna
+    "Excepción". Los códigos 1214/1215/1216 vienen en
+    "Clase absent./pres.", que corresponden a 50/75/100.
+  */
+  function columnaRecargoSAPAutomatica() {
+
+    const candidatos = [
+      "clase absent./pres.",
+      "clase absent./pres",
+      "clase absent",
+      "clase ausencia",
+      "recargo",
+      "porcentaje",
+      "% hrs extras",
+      "tipo hora"
+    ];
+
+    const encontrada = guessHeader(sapCabeceras, candidatos);
+
+    if (encontrada && sapFilas.length) {
+      const validos = sapFilas.filter(row => {
+        const n = Math.round(numero(row[encontrada]));
+        return [50, 75, 100, 1214, 1215, 1216].includes(n);
+      }).length;
+
+      if (validos > 0) {
+        return encontrada;
+      }
+    }
+
+    for (const encabezado of sapCabeceras) {
+      const validos = sapFilas.filter(row => {
+        const n = Math.round(numero(row[encabezado]));
+        return [50, 75, 100, 1214, 1215, 1216].includes(n);
+      }).length;
+
+      if (validos > 0) {
+        return encabezado;
+      }
+    }
+
+    return encontrada || "";
+  }
+
+
   function recargoSapNumero(v) {
 
     const n =
@@ -13527,17 +13573,7 @@
 
 
     const hRec =
-      guessHeader(
-        sapCabeceras,
-        [
-          "recargo",
-          "porcentaje",
-          "% hrs extras",
-          "tipo hora",
-          "excepcion",
-          "excepción"
-        ]
-      );
+      columnaRecargoSAPAutomatica();
 
 
     const hHoras =
