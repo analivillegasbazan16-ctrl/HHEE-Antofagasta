@@ -9402,17 +9402,22 @@
 
     return [...mapa.values()]
       .map(
-        fila => ({
-          ...fila,
-          horasRegistradas: red2(fila.horasRegistradas),
-          bonificacion: 0,
-          horasPagar: red2(fila.horasRegistradas),
-          solicitudes: [...fila.solicitudes],
-          solicitudesDetalle: fila.solicitudesDetalle.map(d => ({
-            ...d,
-            horas: red2(d.horas)
-          }))
-        })
+        fila => {
+          const detallePago =
+            detallePagoDesdeHoras(fila.horasRegistradas);
+
+          return {
+            ...fila,
+            horasRegistradas: detallePago.registradas,
+            bonificacion: detallePago.bonificacion,
+            horasPagar: detallePago.pagar,
+            solicitudes: [...fila.solicitudes],
+            solicitudesDetalle: fila.solicitudesDetalle.map(d => ({
+              ...d,
+              horas: red2(d.horas)
+            }))
+          };
+        }
       )
       .sort(
         (a, b) =>
@@ -14054,122 +14059,168 @@
         .sort();
 
 
-      const resultados =
-        keys.map(
-          k => {
+      // Construimos la conciliación por solicitud/grupo BD.HE y no solo por
+      // la suma global del trabajador. SAP no trae horario ni N° de solicitud,
+      // por lo que la clave técnica es N° personal + fecha + recargo.
+      // Si no existe ese recargo en SAP, buscamos otro recargo de la misma
+      // persona y fecha para identificar explícitamente el error de recargo.
+      const resultados = [];
+      const clavesBD = new Set(bd.keys());
+      const clavesSAP = new Set(sap.keys());
+      const clavesSAPAsociadas = new Set();
 
-            const partes = k.split("|");
-            const idCruce = partes[0];
-            const fecha = partes[1];
-            const recargo = Number(partes[2]);
+      clavesBD.forEach(k => {
+        const partes = k.split("|");
+        const idCruce = partes[0];
+        const fecha = partes[1];
+        const recargoBD = Number(partes[2]);
+        const b = bd.get(k) || {
+          registradas: 0,
+          bonificacion: 0,
+          pagar: 0,
+          solicitudes: [],
+          solicitudesDetalle: []
+        };
 
-            const b = bd.get(k) || { registradas: 0, bonificacion: 0, pagar: 0, solicitudes: [] };
-            const hs = red2(sap.get(k) || 0);
+        const hsExactas = red2(sap.get(k) || 0);
+        let hsComparacion = hsExactas;
+        let recargoSAPReal = hsExactas > 0 ? recargoBD : null;
+        let horasSAPAlternativas = 0;
+        let recargoSAPAlternativo = null;
 
-            const mta =
-              meta.get(idCruce)
-              ||
-              {
-                numeroPersonal: idCruce.startsWith("__SINNUM__") ? "" : idCruce,
-                nombre: idCruce.startsWith("__SINNUM__") ? "Trabajador sin N° personal" : `N° personal ${idCruce}`,
-                area: "",
-                claveTrabajador: idCruce
-              };
-
-            // N° de personal normalizado para detectar diferencias de recargo
-            // entre BD.HE y SAP en la misma persona y fecha.
-            const numeroPersonal =
-              normalizarNumeroPersonal(mta.numeroPersonal || idCruce);
-
-
-            const registradas = red2(b.registradas || 0);
-            // Conciliación: solo horas registradas y aprobadas por supervisor vs SAP.
-            const diferencia = red2(hs - registradas);
-
-            // Además de las horas, se revisa explícitamente el recargo.
-            // Si la misma persona y fecha aparecen en SAP con otro recargo,
-            // se marca como diferencia de recargo aunque las horas coincidan.
-            let recargoBD = registradas > 0 ? recargo : null;
-            let recargoSAPReal = hs > 0 ? recargo : null;
-            let horasSAPAlternativas = 0;
-
-            if (numeroPersonal && fecha) {
-              sap.forEach((valorSap, claveSap) => {
-                const partesSap = claveSap.split("|");
-                if (partesSap[0] === numeroPersonal && partesSap[1] === fecha) {
-                  const recargoSap = Number(partesSap[2]);
-                  if (recargoSap !== recargo && valorSap > 0) {
-                    horasSAPAlternativas = red2(horasSAPAlternativas + numero(valorSap));
-                    if (registradas > 0 && !recargoSAPReal) recargoSAPReal = recargoSap;
-                  }
-                }
-              });
+        // Si no hay SAP con el mismo recargo, buscar SAP de la misma persona
+        // y fecha con otro recargo. Esto permite detectar 50% vs 75%, etc.
+        if (hsExactas === 0) {
+          sap.forEach((valorSap, claveSap) => {
+            const ps = claveSap.split("|");
+            if (
+              ps[0] === idCruce &&
+              ps[1] === fecha &&
+              Number(ps[2]) !== recargoBD &&
+              numero(valorSap) > 0
+            ) {
+              horasSAPAlternativas = red2(horasSAPAlternativas + numero(valorSap));
+              recargoSAPAlternativo = Number(ps[2]);
+              clavesSAPAsociadas.add(claveSap);
             }
-
-            // Si esta fila viene solo de SAP, buscamos el recargo de la solicitud
-            // aprobada de esa misma persona y fecha.
-            if (registradas === 0 && hs > 0 && numeroPersonal && fecha) {
-              bd.forEach((valorBd, claveBd) => {
-                const partesBd = claveBd.split("|");
-                if (partesBd[0] === numeroPersonal && partesBd[1] === fecha) {
-                  const recargoBd = Number(partesBd[2]);
-                  if (recargoBd !== recargo && numero(valorBd.registradas) > 0) {
-                    recargoBD = recargoBd;
-                  }
-                }
-              });
-            }
-
-            let estado = "Conforme";
-
-
-            if (idCruce.startsWith("__SINNUM__")) {
-              estado = "Sin N° personal";
-            }
-            else if (registradas === 0 && hs > 0) {
-              estado = horasSAPAlternativas > 0 ? "Revisar recargo" : "Solo SAP";
-            }
-            else if (registradas > 0 && hs === 0) {
-              estado = horasSAPAlternativas > 0 ? "Revisar recargo" : "Sin horas SAP";
-            }
-            else if (horasSAPAlternativas > 0) {
-              // Si existen horas SAP para la misma persona y fecha, pero bajo
-              // otro recargo, es una diferencia de recargo aunque las horas
-              // puedan coincidir. La conciliación nunca debe marcarla conforme.
-              estado = "Revisar recargo";
-            }
-            else if (Math.abs(diferencia) >= 0.01) {
-              estado = "Revisar";
-            }
-
-
-            return {
-              clave: k,
-              claveTrabajador: mta.claveTrabajador || idCruce,
-              numeroPersonal: mta.numeroPersonal || "",
-              nombre: mta.nombre || "Sin nombre",
-              area: mta.area || "",
-              fecha,
-              recargo,
-              recargoBD,
-              recargoSAP: recargoSAPReal,
-              horasSAPAlternativas,
-              registradas,
-              // La bonificación se conserva para el proceso de pago,
-              // pero NO interviene en la conciliación con SAP.
-              bonificacion: red2(b.bonificacion || 0),
-              pagar: red2(b.pagar || registradas),
-              sap: hs,
-              // La conciliación compara exclusivamente las horas reales
-              // registradas y aprobadas contra las horas informadas por SAP.
-              diferencia,
-              estado,
-              solicitudes: b.solicitudes || [],
-              solicitudesDetalle: b.solicitudesDetalle || []
-            };
+          });
+          if (horasSAPAlternativas > 0) {
+            hsComparacion = horasSAPAlternativas;
+            recargoSAPReal = recargoSAPAlternativo;
           }
-        );
+        }
 
+        const mta =
+          meta.get(idCruce) || {
+            numeroPersonal: idCruce.startsWith("__SINNUM__") ? "" : idCruce,
+            nombre: idCruce.startsWith("__SINNUM__")
+              ? "Trabajador sin N° personal"
+              : `N° personal ${idCruce}`,
+            area: "",
+            claveTrabajador: idCruce
+          };
+
+        const registradas = red2(b.registradas || 0);
+        const diferencia = red2(hsComparacion - registradas);
+
+        let estado = "Conforme";
+        if (idCruce.startsWith("__SINNUM__")) {
+          estado = "Sin N° personal";
+        } else if (hsExactas === 0 && horasSAPAlternativas > 0) {
+          estado = "Revisar recargo";
+        } else if (registradas > 0 && hsExactas === 0) {
+          estado = "Sin horas SAP";
+        } else if (Math.abs(diferencia) >= 0.01) {
+          estado = "Revisar";
+        }
+
+        resultados.push({
+          clave: k,
+          claveTrabajador: mta.claveTrabajador || idCruce,
+          numeroPersonal: mta.numeroPersonal || "",
+          nombre: mta.nombre || "Sin nombre",
+          area: mta.area || "",
+          fecha,
+          recargo: recargoBD,
+          recargoBD,
+          recargoSAP: recargoSAPReal,
+          horasSAPAlternativas,
+          registradas,
+          bonificacion: red2(b.bonificacion || 0),
+          pagar: red2(b.pagar || registradas),
+          sap: hsComparacion,
+          diferencia,
+          estado,
+          solicitudes: b.solicitudes || [],
+          solicitudesDetalle: b.solicitudesDetalle || []
+        });
+      });
+
+      // Agrega únicamente los registros SAP que no encontraron una solicitud
+      // BD.HE exacta. Si existe una solicitud del mismo trabajador/fecha con
+      // otro recargo, se informa como diferencia de recargo en vez de ocultarlo.
+      clavesSAP.forEach(k => {
+        if (clavesBD.has(k) || clavesSAPAsociadas.has(k)) return;
+
+        const partes = k.split("|");
+        const idCruce = partes[0];
+        const fecha = partes[1];
+        const recargoSAP = Number(partes[2]);
+        const hs = red2(sap.get(k) || 0);
+        if (hs <= 0) return;
+
+        const mta =
+          meta.get(idCruce) || {
+            numeroPersonal: idCruce.startsWith("__SINNUM__") ? "" : idCruce,
+            nombre: idCruce.startsWith("__SINNUM__")
+              ? "Trabajador sin N° personal"
+              : `N° personal ${idCruce}`,
+            area: "",
+            claveTrabajador: idCruce
+          };
+
+        let recargoBDAlternativo = null;
+        let bdAlternativo = null;
+        bd.forEach((valorBd, claveBd) => {
+          const pb = claveBd.split("|");
+          if (
+            pb[0] === idCruce &&
+            pb[1] === fecha &&
+            Number(pb[2]) !== recargoSAP &&
+            numero(valorBd.registradas) > 0
+          ) {
+            recargoBDAlternativo = Number(pb[2]);
+            bdAlternativo = valorBd;
+          }
+        });
+
+        resultados.push({
+          clave: k,
+          claveTrabajador: mta.claveTrabajador || idCruce,
+          numeroPersonal: mta.numeroPersonal || "",
+          nombre: mta.nombre || "Sin nombre",
+          area: mta.area || "",
+          fecha,
+          recargo: recargoSAP,
+          recargoBD: recargoBDAlternativo,
+          recargoSAP,
+          horasSAPAlternativas: 0,
+          registradas: 0,
+          bonificacion: 0,
+          pagar: 0,
+          sap: hs,
+          diferencia: hs,
+          estado: recargoBDAlternativo ? "Revisar recargo" : "Solo SAP",
+          solicitudes: bdAlternativo?.solicitudes || [],
+          solicitudesDetalle: bdAlternativo?.solicitudesDetalle || []
+        });
+      });
+
+      resultados.sort((a, b) =>
+        String(a.nombre || "").localeCompare(String(b.nombre || ""), "es") ||
+        String(a.fecha || "").localeCompare(String(b.fecha || "")) ||
+        Number(a.recargo || 0) - Number(b.recargo || 0)
+      );
 
       const resumenTrabajadores =
         resumenConciliacionPorTrabajador(
@@ -14293,7 +14344,6 @@
 
         if (!detalles.length) {
           detalleSolicitud.push({
-            solicitud: "—",
             fecha: f.fecha,
             horario: "—",
             recargoBD: f.recargoBD || f.recargo || null,
@@ -14352,7 +14402,6 @@
         .filter(f => f.registradas === 0 && f.sap > 0)
         .forEach(f => {
           detalleSolicitud.push({
-            solicitud: "SIN SOLICITUD",
             fecha: f.fecha,
             horario: "—",
             recargoBD: f.recargoBD || null,
@@ -14866,7 +14915,6 @@
 
           if (!detalles.length) {
             salida.push({
-              solicitud: "—",
               fecha: f.fecha,
               horario: "—",
               recargoBD: f.recargoBD || f.recargo || null,
@@ -14883,7 +14931,6 @@
           detalles.forEach(
             d => {
               salida.push({
-                solicitud: d.id ? String(d.id).slice(0, 10) : "—",
                 fecha: f.fecha || d.fechaInicio,
                 horario:
                   d.horaInicio || d.horaTermino
@@ -14919,7 +14966,6 @@
 
             if (!yaExiste) {
               salida.push({
-                solicitud: "SIN SOLICITUD",
                 fecha: f.fecha,
                 horario: "—",
                 recargoBD: f.recargoBD || f.recargo || null,
