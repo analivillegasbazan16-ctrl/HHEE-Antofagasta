@@ -14126,6 +14126,12 @@
             else if (registradas > 0 && hs === 0) {
               estado = horasSAPAlternativas > 0 ? "Revisar recargo" : "Sin horas SAP";
             }
+            else if (horasSAPAlternativas > 0) {
+              // Si existen horas SAP para la misma persona y fecha, pero bajo
+              // otro recargo, es una diferencia de recargo aunque las horas
+              // puedan coincidir. La conciliación nunca debe marcarla conforme.
+              estado = "Revisar recargo";
+            }
             else if (Math.abs(diferencia) >= 0.01) {
               estado = "Revisar";
             }
@@ -14228,16 +14234,110 @@
           .filter(
             x =>
               x.claveTrabajador === clave
+          )
+          .sort(
+            (a, b) =>
+              String(a.fecha || "").localeCompare(String(b.fecha || ""))
+              || Number(a.recargo || 0) - Number(b.recargo || 0)
           );
+
+
+      // Construye una vista por solicitud. Cuando varias solicitudes comparten
+      // fecha y recargo, SAP se informa una sola vez para no duplicar sus horas.
+      const detalleSolicitud = [];
+
+      filas.forEach(f => {
+        const detalles = f.solicitudesDetalle || [];
+
+        if (!detalles.length) {
+          detalleSolicitud.push({
+            solicitud: "—",
+            fecha: f.fecha,
+            horario: "—",
+            recargoBD: f.recargoBD || f.recargo || null,
+            registradas: f.registradas,
+            recargoSAP: f.recargoSAP || null,
+            sap: f.sap,
+            diferencia: f.diferencia,
+            estado: f.estado,
+            motivo: motivoDiferenciaSolicitud(f, filas)
+          });
+          return;
+        }
+
+        detalles.forEach((d, indice) => {
+          const horasSolicitud = red2(d.horas || 0);
+          const esPrimera = indice === 0;
+          const recargoSAP = f.recargoSAP || null;
+          const sapMostrar = esPrimera
+            ? red2(f.sap || f.horasSAPAlternativas || 0)
+            : 0;
+
+          let estado = f.estado;
+          let motivo = motivoDiferenciaSolicitud(f, filas);
+
+          if (f.estado === "Revisar recargo") {
+            estado = "Revisar recargo";
+            motivo = `Diferencia de recargo: BD.HE ${f.recargoBD || f.recargo}% / SAP ${recargoSAP || "otro recargo"}`;
+          }
+          else if (f.estado === "Conforme") {
+            motivo = "CONFORME";
+          }
+
+          detalleSolicitud.push({
+            solicitud: d.id ? String(d.id).slice(0, 12) : "—",
+            fecha: f.fecha || d.fechaInicio,
+            horario:
+              d.horaInicio || d.horaTermino
+                ? `${d.horaInicio || "—"} - ${d.horaTermino || "—"}`
+                : "—",
+            recargoBD: f.recargoBD || f.recargo || null,
+            registradas: horasSolicitud,
+            recargoSAP,
+            sap: sapMostrar,
+            diferencia: esPrimera
+              ? red2((f.sap || f.horasSAPAlternativas || 0) - f.registradas)
+              : 0,
+            estado,
+            motivo
+          });
+        });
+      });
+
+
+      // Agrega registros SAP que no tienen una solicitud aprobada asociada.
+      filas
+        .filter(f => f.registradas === 0 && f.sap > 0)
+        .forEach(f => {
+          detalleSolicitud.push({
+            solicitud: "SIN SOLICITUD",
+            fecha: f.fecha,
+            horario: "—",
+            recargoBD: f.recargoBD || null,
+            registradas: 0,
+            recargoSAP: f.recargoSAP || f.recargo || null,
+            sap: f.sap,
+            diferencia: f.diferencia,
+            estado: f.estado,
+            motivo: motivoDiferenciaSolicitud(f, filas)
+          });
+        });
 
 
       modal(
         `
-          <h3>${esc(trabajador.nombre)}</h3>
+          <h3>Detalle de conciliación · ${esc(trabajador.nombre)}</h3>
 
           <div class="mensaje mensajeInfo">
             <b>N° de personal:</b> ${esc(trabajador.numeroPersonal || "Sin registrar")} ·
             <b>Área:</b> ${esc(trabajador.area || "-")}
+          </div>
+
+          <div class="mensaje mensajeInfo" style="margin-top:10px">
+            La revisión compara <b>cada solicitud aprobada</b> con SAP por
+            <b>N° de personal + fecha + recargo</b>. Si las horas coinciden pero
+            el recargo no coincide, se informa como <b>diferencia de recargo</b>.
+            La bonificación no interviene en esta conciliación.
           </div>
 
           <div class="resumenKpi">
@@ -14250,29 +14350,33 @@
             <table class="tabla">
               <thead>
                 <tr>
+                  <th>Solicitud</th>
                   <th>Fecha</th>
+                  <th>Horario</th>
                   <th>Recargo BD.HE</th>
+                  <th>Horas registradas</th>
                   <th>Recargo SAP</th>
-                  <th>Registradas</th>
-                  <th>SAP</th>
+                  <th>Horas SAP</th>
                   <th>Diferencia</th>
-                  <th>Estado</th>
+                  <th>Resultado</th>
                 </tr>
               </thead>
               <tbody>
                 ${
-                  filas.map(
-                    f =>
+                  detalleSolicitud.map(
+                    d =>
                       `
                         <tr>
-                          <td>${fechaCL(f.fecha)}</td>
-                          <td>${f.recargoBD ? `${f.recargoBD}%` : `${f.recargo}%`}</td>
-                          <td>${f.recargoSAP ? `${f.recargoSAP}%` : (f.sap > 0 ? `${f.recargo}%` : "—")}</td>
-                          <td>${vistaHoras(f.registradas)} h</td>
-                          <td><b>${vistaHoras(f.sap)} h</b></td>
-                          <td>${vistaHoras(f.diferencia)} h</td>
+                          <td>${esc(d.solicitud)}</td>
+                          <td>${fechaCL(d.fecha)}</td>
+                          <td>${esc(d.horario)}</td>
+                          <td>${d.recargoBD ? `${d.recargoBD}%` : "—"}</td>
+                          <td>${vistaHoras(d.registradas)} h</td>
+                          <td>${d.recargoSAP ? `${d.recargoSAP}%` : "—"}</td>
+                          <td><b>${vistaHoras(d.sap)} h</b></td>
+                          <td>${vistaHoras(d.diferencia)} h</td>
                           <td>
-                            <span class="estado ${f.estado === "Conforme" ? "ok" : "diferencia"}">${esc(f.estado)}</span>
+                            <span class="estado ${d.estado === "Conforme" ? "ok" : "diferencia"}">${esc(d.motivo || d.estado)}</span>
                           </td>
                         </tr>
                       `
@@ -14288,7 +14392,6 @@
         `
       );
     };
-
 
   function tablaResumenConciliacion(lista) {
 
