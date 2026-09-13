@@ -14075,6 +14075,11 @@
                 claveTrabajador: idCruce
               };
 
+            // N° de personal normalizado para detectar diferencias de recargo
+            // entre BD.HE y SAP en la misma persona y fecha.
+            const numeroPersonal =
+              normalizarNumeroPersonal(mta.numeroPersonal || idCruce);
+
 
             const registradas = red2(b.registradas || 0);
             // Conciliación: solo horas registradas y aprobadas por supervisor vs SAP.
