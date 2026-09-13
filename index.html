@@ -13814,7 +13814,9 @@
         .slice(0, 3)
         .map(
           f =>
-            `${fechaCL(f.fecha)} ${f.recargo}%: ${vistaHoras(f.registradas)} h registradas aprobadas / SAP ${vistaHoras(f.sap)} h`
+            f.estado === "Revisar recargo"
+              ? `${fechaCL(f.fecha)}: BD.HE ${f.recargoBD || f.recargo}% / SAP ${f.recargoSAP || "otro recargo"}`
+              : `${fechaCL(f.fecha)} ${f.recargo}%: ${vistaHoras(f.registradas)} h registradas aprobadas / SAP ${vistaHoras(f.sap)} h`
         );
 
 
@@ -14078,6 +14080,40 @@
             // Conciliación: solo horas registradas y aprobadas por supervisor vs SAP.
             const diferencia = red2(hs - registradas);
 
+            // Además de las horas, se revisa explícitamente el recargo.
+            // Si la misma persona y fecha aparecen en SAP con otro recargo,
+            // se marca como diferencia de recargo aunque las horas coincidan.
+            let recargoBD = registradas > 0 ? recargo : null;
+            let recargoSAPReal = hs > 0 ? recargo : null;
+            let horasSAPAlternativas = 0;
+
+            if (numeroPersonal && fecha) {
+              sap.forEach((valorSap, claveSap) => {
+                const partesSap = claveSap.split("|");
+                if (partesSap[0] === numeroPersonal && partesSap[1] === fecha) {
+                  const recargoSap = Number(partesSap[2]);
+                  if (recargoSap !== recargo && valorSap > 0) {
+                    horasSAPAlternativas = red2(horasSAPAlternativas + numero(valorSap));
+                    if (registradas > 0 && !recargoSAPReal) recargoSAPReal = recargoSap;
+                  }
+                }
+              });
+            }
+
+            // Si esta fila viene solo de SAP, buscamos el recargo de la solicitud
+            // aprobada de esa misma persona y fecha.
+            if (registradas === 0 && hs > 0 && numeroPersonal && fecha) {
+              bd.forEach((valorBd, claveBd) => {
+                const partesBd = claveBd.split("|");
+                if (partesBd[0] === numeroPersonal && partesBd[1] === fecha) {
+                  const recargoBd = Number(partesBd[2]);
+                  if (recargoBd !== recargo && numero(valorBd.registradas) > 0) {
+                    recargoBD = recargoBd;
+                  }
+                }
+              });
+            }
+
             let estado = "Conforme";
 
 
@@ -14085,10 +14121,10 @@
               estado = "Sin N° personal";
             }
             else if (registradas === 0 && hs > 0) {
-              estado = "Solo SAP";
+              estado = horasSAPAlternativas > 0 ? "Revisar recargo" : "Solo SAP";
             }
             else if (registradas > 0 && hs === 0) {
-              estado = "Sin horas SAP";
+              estado = horasSAPAlternativas > 0 ? "Revisar recargo" : "Sin horas SAP";
             }
             else if (Math.abs(diferencia) >= 0.01) {
               estado = "Revisar";
@@ -14103,6 +14139,9 @@
               area: mta.area || "",
               fecha,
               recargo,
+              recargoBD,
+              recargoSAP: recargoSAPReal,
+              horasSAPAlternativas,
               registradas,
               // La bonificación se conserva para el proceso de pago,
               // pero NO interviene en la conciliación con SAP.
@@ -14212,7 +14251,8 @@
               <thead>
                 <tr>
                   <th>Fecha</th>
-                  <th>Recargo</th>
+                  <th>Recargo BD.HE</th>
+                  <th>Recargo SAP</th>
                   <th>Registradas</th>
                   <th>SAP</th>
                   <th>Diferencia</th>
@@ -14226,7 +14266,8 @@
                       `
                         <tr>
                           <td>${fechaCL(f.fecha)}</td>
-                          <td>${f.recargo}%</td>
+                          <td>${f.recargoBD ? `${f.recargoBD}%` : `${f.recargo}%`}</td>
+                          <td>${f.recargoSAP ? `${f.recargoSAP}%` : (f.sap > 0 ? `${f.recargo}%` : "—")}</td>
                           <td>${vistaHoras(f.registradas)} h</td>
                           <td><b>${vistaHoras(f.sap)} h</b></td>
                           <td>${vistaHoras(f.diferencia)} h</td>
@@ -14345,7 +14386,7 @@
     $("conResultado").innerHTML =
       `
         <div class="notaReglaPago">
-          La conciliación considera únicamente las <b>horas registradas y aprobadas por el supervisor</b> y las compara con SAP por <b>N° de personal + fecha + recargo</b>.
+          La conciliación considera únicamente las <b>horas registradas y aprobadas por el supervisor</b> y las compara con SAP por <b>N° de personal + fecha + recargo</b>. También verifica que el <b>recargo</b> sea el mismo; un 50% en BD.HE y 75% en SAP es una diferencia aunque las horas coincidan.
           <br>
           La bonificación y la regla de mínimo de pago se mantienen para el proceso de pago, pero <b>no intervienen en la revisión de diferencias SAP</b>. La conciliación compara únicamente las horas reales registradas y aprobadas contra SAP.
         </div>
@@ -14395,7 +14436,7 @@
               <h3>Conciliación BD.HE vs SAP</h3>
               <p>
                 Se consideran únicamente solicitudes <b>aprobadas por el supervisor</b>.
-                El cruce se realiza por <b>N° de personal + fecha + recargo</b> y compara las <b>horas registradas</b> contra las horas informadas por SAP.
+                El cruce se realiza por <b>N° de personal + fecha + recargo</b> y compara las <b>horas registradas</b> contra las horas informadas por SAP. Si el recargo no coincide, se identifica como diferencia de recargo.
                 La bonificación se conserva para el proceso de pago, pero no se considera para determinar diferencias. El cruce compara únicamente las horas registradas y aprobadas contra SAP.
               </p>
             </div>
@@ -14609,7 +14650,7 @@
       pdf.text("Conciliación conforme", 18, 45);
       pdf.setFont("helvetica", "normal");
       pdf.setFontSize(7);
-      pdf.text("Las horas registradas y aprobadas coinciden con SAP en cada recargo.", 18, 49);
+      pdf.text("Las horas registradas y aprobadas coinciden con SAP en cada fecha y recargo.", 18, 49);
     }
 
 
@@ -14646,28 +14687,16 @@
         return "CONFORME";
       }
 
+      if (fila.recargoBD && fila.recargoSAP && fila.recargoBD !== fila.recargoSAP) {
+        return `DIFERENCIA DE RECARGO (BD.HE ${fila.recargoBD}% / SAP ${fila.recargoSAP}%)`;
+      }
+
       if (fila.registradas > 0 && fila.sap > 0) {
         return "DIFERENCIA DE HORAS";
       }
 
       if (fila.registradas > 0 && fila.sap === 0) {
-        const mismoDiaOtroRecargo =
-          todasLasFilas.some(
-            x =>
-              x !== fila
-              &&
-              x.numeroPersonal === fila.numeroPersonal
-              &&
-              x.fecha === fila.fecha
-              &&
-              x.sap > 0
-              &&
-              x.recargo !== fila.recargo
-          );
-
-        return mismoDiaOtroRecargo
-          ? "REVISAR RECARGO"
-          : "NO FIGURA EN SAP";
+        return "NO FIGURA EN SAP";
       }
 
       if (fila.registradas === 0 && fila.sap > 0) {
@@ -14696,7 +14725,8 @@
               solicitud: "—",
               fecha: f.fecha,
               horario: "—",
-              recargo: `${f.recargo}%`,
+              recargo: f.recargoBD ? `${f.recargoBD}%` : `${f.recargo}%`,
+              recargoSAP: f.recargoSAP ? `${f.recargoSAP}%` : (f.sap > 0 ? `${f.recargo}%` : "—"),
               registradas: f.registradas,
               sap: f.sap,
               diferencia: f.diferencia,
@@ -14715,7 +14745,8 @@
                   d.horaInicio || d.horaTermino
                     ? `${d.horaInicio || "—"} - ${d.horaTermino || "—"}`
                     : "—",
-                recargo: `${f.recargo}%`,
+                recargo: f.recargoBD ? `${f.recargoBD}%` : `${f.recargo}%`,
+                recargoSAP: f.recargoSAP ? `${f.recargoSAP}%` : (f.sap > 0 ? `${f.recargo}%` : "—"),
                 registradas: f.registradas,
                 sap: f.sap,
                 diferencia: f.diferencia,
@@ -14747,7 +14778,8 @@
                 solicitud: "SIN SOLICITUD",
                 fecha: f.fecha,
                 horario: "—",
-                recargo: `${f.recargo}%`,
+                recargo: f.recargoBD ? `${f.recargoBD}%` : `${f.recargo}%`,
+                recargoSAP: `${f.recargoSAP || f.recargo}%`,
                 registradas: 0,
                 sap: f.sap,
                 diferencia: f.diferencia,
@@ -14769,9 +14801,13 @@
     ) {
 
       let y =
-        pdf.lastAutoTable?.finalY
-        ? pdf.lastAutoTable.finalY + 9
-        : 81;
+        trabajador.__ySeccion
+        ? trabajador.__ySeccion + 9
+        : (pdf.lastAutoTable?.finalY
+            ? pdf.lastAutoTable.finalY + 9
+            : 81);
+
+      delete trabajador.__ySeccion;
 
       if (y > 177) {
         pdf.addPage();
@@ -14806,6 +14842,7 @@
               fechaCL(d.fecha),
               d.horario,
               d.recargo,
+              d.recargoSAP || "—",
               `${vistaHoras(d.registradas)} h`,
               `${vistaHoras(d.sap)} h`,
               `${vistaHoras(d.diferencia)} h`,
@@ -14821,7 +14858,8 @@
             "Solicitud",
             "Fecha",
             "Horario",
-            "Recargo",
+            "Recargo BD.HE",
+            "Recargo SAP",
             "Registradas",
             "SAP",
             "Diferencia",
@@ -14844,15 +14882,16 @@
           columnStyles: {
             0: { cellWidth: 25 },
             1: { cellWidth: 24 },
-            2: { cellWidth: 30 },
-            3: { cellWidth: 18, halign: "center" },
-            4: { cellWidth: 25, halign: "right" },
-            5: { cellWidth: 25, halign: "right" },
-            6: { cellWidth: 25, halign: "right" },
-            7: { cellWidth: 48 }
+            2: { cellWidth: 28 },
+            3: { cellWidth: 22, halign: "center" },
+            4: { cellWidth: 22, halign: "center" },
+            5: { cellWidth: 23, halign: "right" },
+            6: { cellWidth: 23, halign: "right" },
+            7: { cellWidth: 23, halign: "right" },
+            8: { cellWidth: 48 }
           },
           didParseCell(data) {
-            if (data.section === "body" && data.column.index === 7) {
+            if (data.section === "body" && data.column.index === 8) {
               const texto = String(data.cell.raw || "");
               if (texto === "CONFORME") {
                 data.cell.styles.textColor = [24, 134, 91];
@@ -14869,8 +14908,27 @@
 
     // Cada trabajador aparece como un bloque y debajo se muestran
     // sus solicitudes del período, una por una, junto con su cruce SAP.
+    let ultimaSeccion = "";
     resumen.forEach(
       (trabajador, indice) => {
+        const seccion = trabajador.estado === "Conforme"
+          ? "1. Trabajadores conformes"
+          : "2. Trabajadores con diferencias";
+
+        if (seccion !== ultimaSeccion) {
+          let ySeccion = pdf.lastAutoTable?.finalY ? pdf.lastAutoTable.finalY + 9 : 81;
+          if (ySeccion > 177) {
+            pdf.addPage();
+            ySeccion = 18;
+          }
+          pdf.setTextColor(...azul);
+          pdf.setFont("helvetica", "bold");
+          pdf.setFontSize(12);
+          pdf.text(seccion, 14, ySeccion);
+          ultimaSeccion = seccion;
+          trabajador.__ySeccion = ySeccion;
+        }
+
         dibujarTrabajador(
           trabajador,
           indice,
