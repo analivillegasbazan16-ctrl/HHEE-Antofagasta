@@ -1697,8 +1697,19 @@
     if (!barra) return;
 
 
+    // En Administración la navegación superior no debe mostrar
+    // los módulos antiguos "Solicitudes" ni "Exportar".
+    // Resumen concentra ahora la consulta y el botón de exportación.
+    const opcionesVisibles =
+      grupo.clave === "administracion"
+        ? grupo.opciones.filter(
+            opcion =>
+              !["solicitudes", "exportar"].includes(opcion.clave)
+          )
+        : grupo.opciones;
+
     barra.innerHTML =
-      grupo.opciones
+      opcionesVisibles
         .map(
           opcion => `
             <button
@@ -9034,10 +9045,146 @@
     });
 
     $("btnResumenExportar").addEventListener("click", () => {
-      abrirModulo("exportar");
+      abrirModalExportarRango();
     });
 
     aplicar();
+  }
+
+
+  /* =========================================================
+     ADMIN - EXPORTAR DESDE RESUMEN
+     Exportación por rango de meses en un solo Excel.
+  ========================================================= */
+
+  async function abrirModalExportarRango() {
+
+    await cargarUsuarios();
+
+    const hoy = new Date();
+
+    modal(`
+      <div class="modalCabecera">
+        <div>
+          <h3>Exportar solicitudes</h3>
+          <p class="modalSubtitulo">Selecciona un período completo para descargar todos los meses en un solo archivo Excel.</p>
+        </div>
+        <button type="button" class="btnCerrarModal" onclick="cerrarModal()">×</button>
+      </div>
+
+      <div class="mensaje mensajeInfo">
+        <b>Ejemplo:</b> julio 2026 a septiembre 2026 genera <b>un solo Excel</b> con los tres meses.
+      </div>
+
+      <div class="filtrosRango">
+        <div>
+          <label>Período desde</label>
+          <div class="periodoGrupo">
+            <select id="modalExpDesdeMes">
+              ${opcionesMeses(7)}
+            </select>
+            <select id="modalExpDesdeAnio">
+              ${opcionesAnios(hoy.getFullYear())}
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label>Período hasta</label>
+          <div class="periodoGrupo">
+            <select id="modalExpHastaMes">
+              ${opcionesMeses(hoy.getMonth() + 1)}
+            </select>
+            <select id="modalExpHastaAnio">
+              ${opcionesAnios(hoy.getFullYear())}
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label>Estado</label>
+          <select id="modalExpEstado">
+            <option value="">Todos</option>
+            <option value="pendiente">Pendiente</option>
+            <option value="aprobada">Aprobada</option>
+            <option value="rechazada">Rechazada</option>
+          </select>
+        </div>
+
+        <div>
+          <label>Área</label>
+          <select id="modalExpArea">
+            <option value="">Todas</option>
+            ${[...new Set((await cargarTodasSolicitudes()).map(x => String(x.Area || '').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')).map(a => `<option value="${esc(a)}">${esc(a)}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+
+      <div id="modalExpResultado" class="mensaje mensajeInfo" style="display:none"></div>
+
+      <div class="acciones modalAcciones">
+        <button type="button" class="btn btnSecundario" onclick="cerrarModal()">Cancelar</button>
+        <button type="button" class="btn btnPrimario" id="btnModalExpExcel">⇩ Descargar Excel</button>
+      </div>
+    `);
+
+    // Por defecto, desde el primer mes disponible del año actual hasta el mes actual.
+    const mesActual = hoy.getMonth() + 1;
+    const desdeMes = $("modalExpDesdeMes");
+    const hastaMes = $("modalExpHastaMes");
+    if (desdeMes) desdeMes.value = String(Math.max(1, Math.min(7, mesActual)));
+    if (hastaMes) hastaMes.value = String(mesActual);
+
+    $("btnModalExpExcel").addEventListener("click", async () => {
+      const yDesde = Number($("modalExpDesdeAnio").value);
+      const mDesde = Number($("modalExpDesdeMes").value);
+      const yHasta = Number($("modalExpHastaAnio").value);
+      const mHasta = Number($("modalExpHastaMes").value);
+
+      const desdeClave = yDesde * 100 + mDesde;
+      const hastaClave = yHasta * 100 + mHasta;
+
+      if (desdeClave > hastaClave) {
+        return toast("El período desde no puede ser posterior al período hasta.", "error");
+      }
+
+      const btn = $("btnModalExpExcel");
+      const resultado = $("modalExpResultado");
+      btn.disabled = true;
+      btn.textContent = "Preparando Excel...";
+
+      try {
+        const rango = rangoPeriodos(yDesde, mDesde, yHasta, mHasta);
+        let lista = await solicitudesRango(yDesde, mDesde, yHasta, mHasta);
+
+        const estado = $("modalExpEstado").value;
+        const area = normalizarTexto($("modalExpArea").value);
+
+        lista = lista.filter(s =>
+          (!estado || normEstado(s.estado) === estado) &&
+          (!area || normalizarTexto(s.Area) === area)
+        );
+
+        if (!lista.length) {
+          resultado.style.display = "block";
+          resultado.textContent = "No existen solicitudes para el período y filtros seleccionados.";
+          return;
+        }
+
+        exportarExcelRango(lista, rango);
+        cerrarModal();
+        toast(`Excel generado: ${etiquetaRangoPeriodo(rango)}.`, "exito");
+      }
+      catch (err) {
+        console.error("[HHEE] Error exportando rango desde Resumen:", err);
+        resultado.style.display = "block";
+        resultado.textContent = err.message || "No fue posible generar el Excel.";
+      }
+      finally {
+        btn.disabled = false;
+        btn.textContent = "⇩ Descargar Excel";
+      }
+    });
   }
 
 
@@ -9529,53 +9676,65 @@
     }
 
 
+    async function cargarHorasPagar() {
+
+      try {
+
+        rangoActual =
+          rangoPeriodos(
+            Number($("pagDesdeAnio").value),
+            Number($("pagDesdeMes").value),
+            Number($("pagHastaAnio").value),
+            Number($("pagHastaMes").value)
+          );
+
+
+        const solicitudes =
+          await solicitudesRango(
+            rangoActual.yDesde,
+            rangoActual.mDesde,
+            rangoActual.yHasta,
+            rangoActual.mHasta,
+            true
+          );
+
+
+        filasBase =
+          filasAprobadasPorFechaRecargo(
+            solicitudes,
+            rangoActual
+          );
+
+
+        pintar();
+
+      }
+      catch (err) {
+
+        console.error(err);
+        toast(err.message || "No fue posible calcular las horas a pagar.", "error");
+      }
+    }
+
+
     $("btnPagCargar")
       .addEventListener(
         "click",
-        async () => {
-
-          try {
-
-            rangoActual =
-              rangoPeriodos(
-                Number($("pagDesdeAnio").value),
-                Number($("pagDesdeMes").value),
-                Number($("pagHastaAnio").value),
-                Number($("pagHastaMes").value)
-              );
-
-
-            const solicitudes =
-              await solicitudesRango(
-                rangoActual.yDesde,
-                rangoActual.mDesde,
-                rangoActual.yHasta,
-                rangoActual.mHasta,
-                true
-              );
-
-
-            filasBase =
-              filasAprobadasPorFechaRecargo(
-                solicitudes,
-                rangoActual
-              );
-
-
-            pintar();
-
-          }
-          catch (err) {
-
-            console.error(err);
-            toast(err.message || "No fue posible calcular las horas a pagar.", "error");
-          }
-        }
+        cargarHorasPagar
       );
 
 
     $("pagBuscar").addEventListener("input", pintar);
     $("pagArea").addEventListener("input", pintar);
+
+
+    /*
+      Al abrir "Horas a pagar", se carga automáticamente el mes actual
+      y solo las solicitudes aprobadas por el supervisor.
+      Los selectores de rango siguen disponibles para consultar otros
+      períodos cuando sea necesario.
+    */
+    await cargarHorasPagar();
 
 
     $("btnPagExcel")
