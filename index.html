@@ -9354,7 +9354,8 @@
                     horasRegistradas: 0,
                     bonificacion: 0,
                     horasPagar: 0,
-                    solicitudes: new Set()
+                    solicitudes: new Set(),
+                    solicitudesDetalle: []
                   }
                 );
               }
@@ -9370,6 +9371,28 @@
 
               if (s.id) {
                 fila.solicitudes.add(s.id);
+
+                const existente =
+                  fila.solicitudesDetalle.find(
+                    d => d.id === s.id
+                  );
+
+                if (existente) {
+                  existente.horas += numero(t.horas);
+                }
+                else {
+                  fila.solicitudesDetalle.push({
+                    id: s.id,
+                    fechaInicio: s.fechaInicio || fecha,
+                    horaInicio: s.horaInicio || "",
+                    horaTermino: s.horaTermino || "",
+                    motivoTrabajo: s.motivoTrabajo || "",
+                    tipoFormulario: s.tipoFormulario || "",
+                    diaTrabajo: s.diaTrabajo || "",
+                    extensionFaena: Boolean(s.extensionFaena || s.seExtendioFaena || s.extiendeFaena),
+                    horas: numero(t.horas)
+                  });
+                }
               }
             }
           );
@@ -9384,7 +9407,11 @@
           horasRegistradas: red2(fila.horasRegistradas),
           bonificacion: 0,
           horasPagar: red2(fila.horasRegistradas),
-          solicitudes: [...fila.solicitudes]
+          solicitudes: [...fila.solicitudes],
+          solicitudesDetalle: fila.solicitudesDetalle.map(d => ({
+            ...d,
+            horas: red2(d.horas)
+          }))
         })
       )
       .sort(
@@ -14086,7 +14113,8 @@
               // registradas y aprobadas contra las horas informadas por SAP.
               diferencia,
               estado,
-              solicitudes: b.solicitudes || []
+              solicitudes: b.solicitudes || [],
+              solicitudesDetalle: b.solicitudesDetalle || []
             };
           }
         );
@@ -14476,17 +14504,17 @@
       });
 
 
+    const resultados =
+      ultimaConciliacion.resultados || [];
+
     const resumen =
       ultimaConciliacion.resumenTrabajadores
       ||
-      resumenConciliacionPorTrabajador(
-        ultimaConciliacion.resultados || []
-      );
+      resumenConciliacionPorTrabajador(resultados);
 
 
     const conformes =
       resumen.filter(x => x.estado === "Conforme");
-
 
     const revisar =
       resumen.filter(x => x.estado !== "Conforme");
@@ -14520,7 +14548,6 @@
     pdf.setFontSize(22);
     pdf.text("transelec", 14, 16);
 
-
     pdf.setFontSize(15);
     pdf.text(
       "Informe de conciliación de horas extras",
@@ -14528,7 +14555,6 @@
       14,
       { align: "right" }
     );
-
 
     pdf.setFont("helvetica", "normal");
     pdf.setTextColor(...gris);
@@ -14540,11 +14566,9 @@
       { align: "right" }
     );
 
-
     pdf.setDrawColor(...azul);
     pdf.setLineWidth(.8);
     pdf.line(14, 23, 283, 23);
-
 
     pdf.setFillColor(247, 250, 252);
     pdf.setDrawColor(...borde);
@@ -14570,7 +14594,7 @@
       pdf.setFont("helvetica", "normal");
       pdf.setFontSize(7);
       pdf.text(
-        `${revisar.length} trabajador(es) presentan diferencias o incidencias y deben revisarse antes de autorizar el pago.`,
+        `${revisar.length} trabajador(es) presentan diferencias o incidencias. El detalle por solicitud permite identificar si la diferencia corresponde a horas, recargo o ausencia en SAP.`,
         18,
         49
       );
@@ -14585,7 +14609,7 @@
       pdf.text("Conciliación conforme", 18, 45);
       pdf.setFont("helvetica", "normal");
       pdf.setFontSize(7);
-      pdf.text("No se detectaron diferencias entre las horas registradas aprobadas y SAP.", 18, 49);
+      pdf.text("Las horas registradas y aprobadas coinciden con SAP en cada recargo.", 18, 49);
     }
 
 
@@ -14596,7 +14620,6 @@
       ["HORAS REGISTRADAS", vistaHoras(totalRegistradas)],
       ["HORAS SAP", vistaHoras(totalSap)]
     ];
-
 
     const anchoTarjeta = 42.2;
 
@@ -14617,67 +14640,198 @@
     );
 
 
-    let yActual = 79;
+    function motivoDiferenciaSolicitud(fila, todasLasFilas) {
+
+      if (fila.estado === "Conforme") {
+        return "CONFORME";
+      }
+
+      if (fila.registradas > 0 && fila.sap > 0) {
+        return "DIFERENCIA DE HORAS";
+      }
+
+      if (fila.registradas > 0 && fila.sap === 0) {
+        const mismoDiaOtroRecargo =
+          todasLasFilas.some(
+            x =>
+              x !== fila
+              &&
+              x.numeroPersonal === fila.numeroPersonal
+              &&
+              x.fecha === fila.fecha
+              &&
+              x.sap > 0
+              &&
+              x.recargo !== fila.recargo
+          );
+
+        return mismoDiaOtroRecargo
+          ? "REVISAR RECARGO"
+          : "NO FIGURA EN SAP";
+      }
+
+      if (fila.registradas === 0 && fila.sap > 0) {
+        return "SOLO FIGURA EN SAP";
+      }
+
+      return "REVISAR";
+    }
 
 
-    const dibujarSeccion = (
-      titulo,
-      lista,
-      decision
-    ) => {
+    function detalleFilasTrabajador(trabajador) {
+
+      const filasTrabajador =
+        trabajador.filas || [];
+
+      const salida = [];
+
+      filasTrabajador.forEach(
+        f => {
+
+          const detalles =
+            f.solicitudesDetalle || [];
+
+          if (!detalles.length) {
+            salida.push({
+              solicitud: "—",
+              fecha: f.fecha,
+              horario: "—",
+              recargo: `${f.recargo}%`,
+              registradas: f.registradas,
+              sap: f.sap,
+              diferencia: f.diferencia,
+              estado: f.estado,
+              motivo: motivoDiferenciaSolicitud(f, resultados)
+            });
+            return;
+          }
+
+          detalles.forEach(
+            d => {
+              salida.push({
+                solicitud: d.id ? String(d.id).slice(0, 10) : "—",
+                fecha: f.fecha || d.fechaInicio,
+                horario:
+                  d.horaInicio || d.horaTermino
+                    ? `${d.horaInicio || "—"} - ${d.horaTermino || "—"}`
+                    : "—",
+                recargo: `${f.recargo}%`,
+                registradas: f.registradas,
+                sap: f.sap,
+                diferencia: f.diferencia,
+                estado: f.estado,
+                motivo: motivoDiferenciaSolicitud(f, resultados)
+              });
+            }
+          );
+        }
+      );
+
+
+      // Registros SAP que no tienen una solicitud aprobada asociada.
+      filasTrabajador
+        .filter(f => f.registradas === 0 && f.sap > 0)
+        .forEach(
+          f => {
+            const yaExiste = salida.some(
+              x =>
+                x.fecha === f.fecha
+                &&
+                x.recargo === `${f.recargo}%`
+                &&
+                x.sap === f.sap
+            );
+
+            if (!yaExiste) {
+              salida.push({
+                solicitud: "SIN SOLICITUD",
+                fecha: f.fecha,
+                horario: "—",
+                recargo: `${f.recargo}%`,
+                registradas: 0,
+                sap: f.sap,
+                diferencia: f.diferencia,
+                estado: f.estado,
+                motivo: "SOLO FIGURA EN SAP"
+              });
+            }
+          }
+        );
+
+      return salida;
+    }
+
+
+    function dibujarTrabajador(
+      trabajador,
+      indice,
+      total
+    ) {
+
+      let y =
+        pdf.lastAutoTable?.finalY
+        ? pdf.lastAutoTable.finalY + 9
+        : 81;
+
+      if (y > 177) {
+        pdf.addPage();
+        y = 18;
+      }
 
       pdf.setTextColor(...azul);
       pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(9);
-      pdf.text(titulo, 14, yActual);
-      pdf.setFontSize(7);
+      pdf.setFontSize(11);
       pdf.text(
-        `${lista.length} trabajador(es)`,
-        283,
-        yActual,
-        { align: "right" }
+        `Trabajador: ${trabajador.nombre}`,
+        14,
+        y
       );
 
-      yActual += 3;
+      pdf.setFont("helvetica", "normal");
+      pdf.setTextColor(...gris);
+      pdf.setFontSize(7);
+      pdf.text(
+        `N° personal: ${trabajador.numeroPersonal || "Sin registrar"} · Área: ${trabajador.area || "-"} · Resultado: ${trabajador.estado}`,
+        14,
+        y + 4
+      );
 
+      const detalles =
+        detalleFilasTrabajador(trabajador);
 
       const body =
-        lista.length
-          ?
-            lista.map(
-              x => [
-                x.numeroPersonal || "Sin N°",
-                x.nombre,
-                `${vistaHoras(x.registradas)} h`,
-                `${vistaHoras(x.sap)} h`,
-                `${vistaHoras(x.diferencia)} h`,
-                String(x.incidencias),
-                decision
-              ]
-            )
-          :
-            [["", "No se identificaron trabajadores en esta sección.", "", "", "", "", "", "", ""]];
-
+        detalles.length
+          ? detalles.map(d => [
+              d.solicitud,
+              fechaCL(d.fecha),
+              d.horario,
+              d.recargo,
+              `${vistaHoras(d.registradas)} h`,
+              `${vistaHoras(d.sap)} h`,
+              `${vistaHoras(d.diferencia)} h`,
+              d.motivo
+            ])
+          : [["—", "—", "—", "—", "0,00 h", "0,00 h", "0,00 h", "SIN DATOS"]];
 
       if (typeof pdf.autoTable === "function") {
-
         pdf.autoTable({
-          startY: yActual,
+          startY: y + 7,
           margin: { left: 14, right: 14 },
           head: [[
-            "N° personal",
-            "Trabajador",
+            "Solicitud",
+            "Fecha",
+            "Horario",
+            "Recargo",
             "Registradas",
             "SAP",
             "Diferencia",
-            "Inc.",
-            "Decisión"
+            "Resultado"
           ]],
           body,
           theme: "grid",
           styles: {
-            fontSize: 6.4,
-            cellPadding: 1.6,
+            fontSize: 6.2,
+            cellPadding: 1.5,
             lineColor: borde,
             lineWidth: .2,
             textColor: [47, 63, 82]
@@ -14688,65 +14842,46 @@
             fontStyle: "bold"
           },
           columnStyles: {
-            0: { cellWidth: 22 },
-            1: { cellWidth: 48 },
-            2: { cellWidth: 30, halign: "right" },
-            3: { cellWidth: 30, halign: "right" },
-            4: { cellWidth: 30, halign: "right" },
-            5: { cellWidth: 12, halign: "center" },
-            6: { cellWidth: 25, halign: "center", fontStyle: "bold" }
+            0: { cellWidth: 25 },
+            1: { cellWidth: 24 },
+            2: { cellWidth: 30 },
+            3: { cellWidth: 18, halign: "center" },
+            4: { cellWidth: 25, halign: "right" },
+            5: { cellWidth: 25, halign: "right" },
+            6: { cellWidth: 25, halign: "right" },
+            7: { cellWidth: 48 }
           },
           didParseCell(data) {
-            if (
-              data.section === "body"
-              &&
-              data.column.index === 6
-              &&
-              decision === "REVISAR"
-            ) {
-              data.cell.styles.textColor = [138, 91, 0];
+            if (data.section === "body" && data.column.index === 7) {
+              const texto = String(data.cell.raw || "");
+              if (texto === "CONFORME") {
+                data.cell.styles.textColor = [24, 134, 91];
+              }
+              else {
+                data.cell.styles.textColor = [138, 91, 0];
+              }
             }
           }
         });
-
-        yActual = (pdf.lastAutoTable?.finalY || yActual) + 9;
       }
-    };
-
-
-    dibujarSeccion(
-      "1. Trabajadores conformes",
-      conformes,
-      "CONFORME"
-    );
-
-
-    dibujarSeccion(
-      "2. Trabajadores con diferencias",
-      revisar,
-      "REVISAR"
-    );
-
-
-    {
-      const yNota = Math.min(
-        (pdf.lastAutoTable?.finalY || 175) + 7,
-        193
-      );
-      pdf.setTextColor(132, 84, 0);
-      pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(6.5);
-      pdf.text(
-        "La conciliación compara únicamente horas registradas y aprobadas por supervisor contra SAP por N° de personal, fecha y recargo.",
-        14,
-        yNota
-      );
     }
+
+
+    // Cada trabajador aparece como un bloque y debajo se muestran
+    // sus solicitudes del período, una por una, junto con su cruce SAP.
+    resumen.forEach(
+      (trabajador, indice) => {
+        dibujarTrabajador(
+          trabajador,
+          indice,
+          resumen.length
+        );
+      }
+    );
 
 
     const totalPaginas =
       pdf.getNumberOfPages();
-
 
     for (let i = 1; i <= totalPaginas; i++) {
       pdf.setPage(i);
@@ -14766,9 +14901,8 @@
       `Informe_Conciliacion_HHEE_${MESES[ultimaConciliacion.mes]}_${ultimaConciliacion.anio}.pdf`
     );
 
-
     toast(
-      "PDF generado.",
+      "PDF generado con el detalle de cada solicitud.",
       "exito"
     );
   }
