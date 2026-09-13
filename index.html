@@ -9379,22 +9379,13 @@
 
     return [...mapa.values()]
       .map(
-        fila => {
-
-          const pago =
-            detallePagoDesdeHoras(
-              fila.horasRegistradas
-            );
-
-
-          return {
-            ...fila,
-            horasRegistradas: pago.registradas,
-            bonificacion: pago.bonificacion,
-            horasPagar: pago.pagar,
-            solicitudes: [...fila.solicitudes]
-          };
-        }
+        fila => ({
+          ...fila,
+          horasRegistradas: red2(fila.horasRegistradas),
+          bonificacion: 0,
+          horasPagar: red2(fila.horasRegistradas),
+          solicitudes: [...fila.solicitudes]
+        })
       )
       .sort(
         (a, b) =>
@@ -13796,7 +13787,7 @@
         .slice(0, 3)
         .map(
           f =>
-            `${fechaCL(f.fecha)} ${f.recargo}%: ${vistaHoras(f.registradas)} h reales${f.bonificacion > 0 ? ` + ${vistaHoras(f.bonificacion)} h bonificación` : ""} = ${vistaHoras(f.pagar)} h a pagar / SAP ${vistaHoras(f.sap)} h`
+            `${fechaCL(f.fecha)} ${f.recargo}%: ${vistaHoras(f.registradas)} h registradas aprobadas / SAP ${vistaHoras(f.sap)} h`
         );
 
 
@@ -14057,9 +14048,8 @@
 
 
             const registradas = red2(b.registradas || 0);
-            const bonificacion = red2(b.bonificacion || 0);
-            const pagar = red2(b.pagar || 0);
-            const diferencia = red2(hs - pagar);
+            // Conciliación: solo horas registradas y aprobadas por supervisor vs SAP.
+            const diferencia = red2(hs - registradas);
 
             let estado = "Conforme";
 
@@ -14067,11 +14057,11 @@
             if (idCruce.startsWith("__SINNUM__")) {
               estado = "Sin N° personal";
             }
-            else if (pagar === 0 && hs > 0) {
+            else if (registradas === 0 && hs > 0) {
               estado = "Solo SAP";
             }
-            else if (pagar > 0 && hs === 0) {
-              estado = "N° no encontrado / sin horas SAP";
+            else if (registradas > 0 && hs === 0) {
+              estado = "Sin horas SAP";
             }
             else if (Math.abs(diferencia) >= 0.01) {
               estado = "Revisar";
@@ -14087,9 +14077,13 @@
               fecha,
               recargo,
               registradas,
-              bonificacion,
-              pagar,
+              // La bonificación se conserva para el proceso de pago,
+              // pero NO interviene en la conciliación con SAP.
+              bonificacion: red2(b.bonificacion || 0),
+              pagar: red2(b.pagar || registradas),
               sap: hs,
+              // La conciliación compara exclusivamente las horas reales
+              // registradas y aprobadas contra las horas informadas por SAP.
               diferencia,
               estado,
               solicitudes: b.solicitudes || []
@@ -14180,10 +14174,8 @@
           </div>
 
           <div class="resumenKpi">
-            <div class="kpi"><span>Registradas</span><strong>${vistaHoras(trabajador.registradas)} h</strong></div>
-            <div class="kpi"><span>Bonificación</span><strong>${vistaHoras(trabajador.bonificacion)} h</strong></div>
-            <div class="kpi"><span>Horas a pagar</span><strong>${vistaHoras(trabajador.pagar)} h</strong></div>
-            <div class="kpi"><span>SAP</span><strong>${vistaHoras(trabajador.sap)} h</strong></div>
+            <div class="kpi"><span>Horas registradas</span><strong>${vistaHoras(trabajador.registradas)} h</strong></div>
+            <div class="kpi"><span>Horas SAP</span><strong>${vistaHoras(trabajador.sap)} h</strong></div>
             <div class="kpi"><span>Diferencia</span><strong>${vistaHoras(trabajador.diferencia)} h</strong></div>
           </div>
 
@@ -14194,8 +14186,6 @@
                   <th>Fecha</th>
                   <th>Recargo</th>
                   <th>Registradas</th>
-                  <th>Bonificación</th>
-                  <th>Horas a pagar</th>
                   <th>SAP</th>
                   <th>Diferencia</th>
                   <th>Estado</th>
@@ -14210,12 +14200,7 @@
                           <td>${fechaCL(f.fecha)}</td>
                           <td>${f.recargo}%</td>
                           <td>${vistaHoras(f.registradas)} h</td>
-                          <td>
-                            ${vistaHoras(f.bonificacion)} h
-                            ${f.bonificacion > 0 ? `<span class="bonificacionPago">Mínimo ${vistaHoras(HORAS_MINIMAS_PAGO)} h</span>` : ""}
-                          </td>
-                          <td><b>${vistaHoras(f.pagar)} h</b></td>
-                          <td>${vistaHoras(f.sap)} h</td>
+                          <td><b>${vistaHoras(f.sap)} h</b></td>
                           <td>${vistaHoras(f.diferencia)} h</td>
                           <td>
                             <span class="estado ${f.estado === "Conforme" ? "ok" : "diferencia"}">${esc(f.estado)}</span>
@@ -14251,8 +14236,6 @@
               <th>N° personal</th>
               <th>Trabajador</th>
               <th>Horas registradas</th>
-              <th>Bonificación</th>
-              <th>Horas a pagar</th>
               <th>SAP</th>
               <th>Diferencia</th>
               <th>Incidencias</th>
@@ -14273,9 +14256,7 @@
                         <span class="subDato">${esc(x.area || "")}</span>
                       </td>
                       <td>${vistaHoras(x.registradas)} h</td>
-                      <td>${vistaHoras(x.bonificacion)} h</td>
-                      <td><b>${vistaHoras(x.pagar)} h</b></td>
-                      <td>${vistaHoras(x.sap)} h</td>
+                      <td><b>${vistaHoras(x.sap)} h</b></td>
                       <td>${vistaHoras(x.diferencia)} h</td>
                       <td>${x.incidencias}</td>
                       <td>
@@ -14325,12 +14306,8 @@
       resumen.filter(x => x.estado !== "Conforme");
 
 
-    const totalBonificacion =
-      resumen.reduce((a, x) => a + numero(x.bonificacion), 0);
-
-
-    const totalPagar =
-      resumen.reduce((a, x) => a + numero(x.pagar), 0);
+    const totalRegistradas =
+      resumen.reduce((a, x) => a + numero(x.registradas), 0);
 
 
     const totalSap =
@@ -14340,17 +14317,16 @@
     $("conResultado").innerHTML =
       `
         <div class="notaReglaPago">
-          <b>Regla de horas mínimas:</b> ${esc(textoEstadoReglaPago())}
+          La conciliación considera únicamente las <b>horas registradas y aprobadas por el supervisor</b> y las compara con SAP por <b>N° de personal + fecha + recargo</b>.
           <br>
-          La conciliación compara <b>Horas a pagar</b> contra SAP. Las horas reales y la bonificación se mantienen visibles por separado.
+          La bonificación y la regla de mínimo de pago se mantienen para el proceso de pago, pero <b>no intervienen en la revisión de diferencias SAP</b>. La conciliación compara únicamente las horas reales registradas y aprobadas contra SAP.
         </div>
 
         <div class="resumenKpi">
           <div class="kpi"><span>Trabajadores</span><strong>${resumen.length}</strong></div>
           <div class="kpi"><span>Conformes</span><strong>${conformes.length}</strong></div>
           <div class="kpi"><span>Por revisar</span><strong>${revisar.length}</strong></div>
-          <div class="kpi"><span>Bonificación</span><strong>${vistaHoras(totalBonificacion)} h</strong></div>
-          <div class="kpi"><span>Horas a pagar</span><strong>${vistaHoras(totalPagar)} h</strong></div>
+          <div class="kpi"><span>Horas registradas</span><strong>${vistaHoras(totalRegistradas)} h</strong></div>
           <div class="kpi"><span>Horas SAP</span><strong>${vistaHoras(totalSap)} h</strong></div>
         </div>
 
@@ -14360,7 +14336,7 @@
 
         <div class="bloque">
           <h3>1. Trabajadores conformes</h3>
-          <div class="nota">Registros donde las horas a pagar coinciden con SAP por N° de personal, fecha y recargo.</div>
+          <div class="nota">Registros donde las horas registradas y aprobadas coinciden con SAP por N° de personal, fecha y recargo.</div>
           <div style="margin-top:12px">${tablaResumenConciliacion(conformes)}</div>
         </div>
 
@@ -14390,9 +14366,9 @@
             <div>
               <h3>Conciliación BD.HE vs SAP</h3>
               <p>
-                Se consideran únicamente solicitudes aprobadas.
-                El cruce se realiza por <b>N° de personal + fecha + recargo</b> y compara SAP contra las <b>Horas a pagar</b>.
-                Cuando un grupo aprobado es menor a ${vistaHoras(HORAS_MINIMAS_PAGO)} h, la diferencia se muestra como <b>bonificación por mínimo</b> al mismo recargo.
+                Se consideran únicamente solicitudes <b>aprobadas por el supervisor</b>.
+                El cruce se realiza por <b>N° de personal + fecha + recargo</b> y compara las <b>horas registradas</b> contra las horas informadas por SAP.
+                La bonificación se conserva para el proceso de pago, pero no se considera para determinar diferencias. El cruce compara únicamente las horas registradas y aprobadas contra SAP.
               </p>
             </div>
           </div>
@@ -14516,19 +14492,10 @@
       resumen.filter(x => x.estado !== "Conforme");
 
 
-    const totalBonificacion =
+    const totalRegistradas =
       red2(
         resumen.reduce(
-          (a, x) => a + numero(x.bonificacion),
-          0
-        )
-      );
-
-
-    const totalPagar =
-      red2(
-        resumen.reduce(
-          (a, x) => a + numero(x.pagar),
+          (a, x) => a + numero(x.registradas),
           0
         )
       );
@@ -14586,7 +14553,7 @@
     pdf.setTextColor(...gris);
     pdf.setFontSize(7.5);
     pdf.text(
-      `Fuente BD.HE: solicitudes aprobadas · Regla mínima: ${vistaHoras(HORAS_MINIMAS_PAGO)} h · SAP: ${ultimaConciliacion.archivoSap || "archivo cargado"} · Generado: ${new Date().toLocaleString("es-CL")}`,
+      `Fuente BD.HE: solicitudes aprobadas por supervisor · SAP: ${ultimaConciliacion.archivoSap || "archivo cargado"} · Generado: ${new Date().toLocaleString("es-CL")}`,
       17,
       33
     );
@@ -14618,7 +14585,7 @@
       pdf.text("Conciliación conforme", 18, 45);
       pdf.setFont("helvetica", "normal");
       pdf.setFontSize(7);
-      pdf.text("No se detectaron diferencias entre las horas a pagar y SAP.", 18, 49);
+      pdf.text("No se detectaron diferencias entre las horas registradas aprobadas y SAP.", 18, 49);
     }
 
 
@@ -14626,8 +14593,7 @@
       ["TRABAJADORES", String(resumen.length)],
       ["CONFORMES", String(conformes.length)],
       ["POR REVISAR", String(revisar.length)],
-      ["BONIFICACIÓN", vistaHoras(totalBonificacion)],
-      ["HORAS A PAGAR", vistaHoras(totalPagar)],
+      ["HORAS REGISTRADAS", vistaHoras(totalRegistradas)],
       ["HORAS SAP", vistaHoras(totalSap)]
     ];
 
@@ -14683,8 +14649,6 @@
                 x.numeroPersonal || "Sin N°",
                 x.nombre,
                 `${vistaHoras(x.registradas)} h`,
-                `${vistaHoras(x.bonificacion)} h`,
-                `${vistaHoras(x.pagar)} h`,
                 `${vistaHoras(x.sap)} h`,
                 `${vistaHoras(x.diferencia)} h`,
                 String(x.incidencias),
@@ -14704,8 +14668,6 @@
             "N° personal",
             "Trabajador",
             "Registradas",
-            "Bonificación",
-            "Horas a pagar",
             "SAP",
             "Diferencia",
             "Inc.",
@@ -14728,19 +14690,17 @@
           columnStyles: {
             0: { cellWidth: 22 },
             1: { cellWidth: 48 },
-            2: { cellWidth: 23, halign: "right" },
-            3: { cellWidth: 25, halign: "right" },
-            4: { cellWidth: 27, halign: "right" },
-            5: { cellWidth: 22, halign: "right" },
-            6: { cellWidth: 25, halign: "right" },
-            7: { cellWidth: 12, halign: "center" },
-            8: { cellWidth: 25, halign: "center", fontStyle: "bold" }
+            2: { cellWidth: 30, halign: "right" },
+            3: { cellWidth: 30, halign: "right" },
+            4: { cellWidth: 30, halign: "right" },
+            5: { cellWidth: 12, halign: "center" },
+            6: { cellWidth: 25, halign: "center", fontStyle: "bold" }
           },
           didParseCell(data) {
             if (
               data.section === "body"
               &&
-              data.column.index === 8
+              data.column.index === 6
               &&
               decision === "REVISAR"
             ) {
@@ -14777,7 +14737,7 @@
       pdf.setFont("helvetica", "normal");
       pdf.setFontSize(6.5);
       pdf.text(
-        `Regla de horas mínimas: si un trabajador registra menos de ${vistaHoras(HORAS_MINIMAS_PAGO)} h aprobadas para una misma fecha y recargo, se completa la diferencia como bonificación al mismo recargo.`,
+        "La conciliación compara únicamente horas registradas y aprobadas por supervisor contra SAP por N° de personal, fecha y recargo.",
         14,
         yNota
       );
