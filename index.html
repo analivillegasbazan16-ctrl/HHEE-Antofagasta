@@ -14869,8 +14869,8 @@
               solicitud: "—",
               fecha: f.fecha,
               horario: "—",
-              recargo: f.recargoBD ? `${f.recargoBD}%` : `${f.recargo}%`,
-              recargoSAP: f.recargoSAP ? `${f.recargoSAP}%` : (f.sap > 0 ? `${f.recargo}%` : "—"),
+              recargoBD: f.recargoBD || f.recargo || null,
+              recargoSAP: f.recargoSAP || (f.sap > 0 ? f.recargo : null),
               registradas: f.registradas,
               sap: f.sap,
               diferencia: f.diferencia,
@@ -14889,8 +14889,8 @@
                   d.horaInicio || d.horaTermino
                     ? `${d.horaInicio || "—"} - ${d.horaTermino || "—"}`
                     : "—",
-                recargo: f.recargoBD ? `${f.recargoBD}%` : `${f.recargo}%`,
-                recargoSAP: f.recargoSAP ? `${f.recargoSAP}%` : (f.sap > 0 ? `${f.recargo}%` : "—"),
+                recargoBD: f.recargoBD || f.recargo || null,
+                recargoSAP: f.recargoSAP || (f.sap > 0 ? f.recargo : null),
                 registradas: red2(d.horas || 0),
                 sap: detalles.indexOf(d) === 0 ? f.sap : 0,
                 diferencia: detalles.indexOf(d) === 0 ? f.diferencia : 0,
@@ -14912,7 +14912,7 @@
               x =>
                 x.fecha === f.fecha
                 &&
-                x.recargo === `${f.recargo}%`
+                x.recargoBD === `${f.recargo}%`
                 &&
                 x.sap === f.sap
             );
@@ -14922,8 +14922,8 @@
                 solicitud: "SIN SOLICITUD",
                 fecha: f.fecha,
                 horario: "—",
-                recargo: f.recargoBD ? `${f.recargoBD}%` : `${f.recargo}%`,
-                recargoSAP: `${f.recargoSAP || f.recargo}%`,
+                recargoBD: f.recargoBD || f.recargo || null,
+                recargoSAP: f.recargoSAP || f.recargo || null,
                 registradas: 0,
                 sap: f.sap,
                 diferencia: f.diferencia,
