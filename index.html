@@ -14213,6 +14213,42 @@
   }
 
 
+  // Helper global para el detalle de conciliacion.
+  // Debe estar fuera de generarPDF para que el boton "Ver detalle"
+  // pueda utilizarlo directamente desde la interfaz.
+  function motivoDiferenciaSolicitudDetalle(fila) {
+    if (!fila) return "REVISAR";
+
+    const recargoBD = Number(fila.recargoBD || fila.recargo || 0);
+    const recargoSAP = Number(fila.recargoSAP || 0);
+    const registradas = Number(fila.registradas || 0);
+    const sap = Number(fila.sap || 0);
+
+    if (fila.estado === "Conforme" &&
+        (!recargoBD || !recargoSAP || recargoBD === recargoSAP)) {
+      return "CONFORME";
+    }
+
+    if (recargoBD && recargoSAP && recargoBD !== recargoSAP) {
+      return `DIFERENCIA DE RECARGO (BD.HE ${recargoBD}% / SAP ${recargoSAP}%)`;
+    }
+
+    if (registradas > 0 && sap > 0 && Math.abs(registradas - sap) >= 0.01) {
+      return "DIFERENCIA DE HORAS";
+    }
+
+    if (registradas > 0 && sap === 0) {
+      return "NO FIGURA EN SAP";
+    }
+
+    if (registradas === 0 && sap > 0) {
+      return "SOLO FIGURA EN SAP";
+    }
+
+    return fila.estado || "REVISAR";
+  }
+
+
   window.verDetalleConciliacion =
     encoded => {
 
@@ -14265,7 +14301,7 @@
             sap: f.sap,
             diferencia: f.diferencia,
             estado: f.estado,
-            motivo: motivoDiferenciaSolicitud(f, filas)
+            motivo: motivoDiferenciaSolicitudDetalle(f)
           });
           return;
         }
@@ -14279,7 +14315,7 @@
             : 0;
 
           let estado = f.estado;
-          let motivo = motivoDiferenciaSolicitud(f, filas);
+          let motivo = motivoDiferenciaSolicitudDetalle(f);
 
           if (f.estado === "Revisar recargo") {
             estado = "Revisar recargo";
@@ -14324,7 +14360,7 @@
             sap: f.sap,
             diferencia: f.diferencia,
             estado: f.estado,
-            motivo: motivoDiferenciaSolicitud(f, filas)
+            motivo: motivoDiferenciaSolicitudDetalle(f)
           });
         });
 
@@ -14340,9 +14376,10 @@
 
           <div class="mensaje mensajeInfo" style="margin-top:10px">
             La revisión compara <b>cada solicitud aprobada</b> con SAP por
-            <b>N° de personal + fecha + recargo</b>. Si las horas coinciden pero
-            el recargo no coincide, se informa como <b>diferencia de recargo</b>.
-            La bonificación no interviene en esta conciliación.
+            <b>N° de personal + fecha + recargo</b>. El <b>horario se conserva desde la solicitud</b>
+            porque SAP no informa el horario; sirve como antecedente para revisar si el recargo aplicado
+            corresponde. Si las horas coinciden pero el recargo no coincide, se informa como
+            <b>diferencia de recargo</b>. La bonificación no interviene en esta conciliación.
           </div>
 
           <div class="resumenKpi">
@@ -14357,7 +14394,7 @@
                 <tr>
                   <th>Solicitud</th>
                   <th>Fecha</th>
-                  <th>Horario</th>
+                  <th>Horario solicitud</th>
                   <th>Recargo BD.HE</th>
                   <th>Horas registradas</th>
                   <th>Recargo SAP</th>
@@ -14855,9 +14892,9 @@
                     : "—",
                 recargo: f.recargoBD ? `${f.recargoBD}%` : `${f.recargo}%`,
                 recargoSAP: f.recargoSAP ? `${f.recargoSAP}%` : (f.sap > 0 ? `${f.recargo}%` : "—"),
-                registradas: f.registradas,
-                sap: f.sap,
-                diferencia: f.diferencia,
+                registradas: red2(d.horas || 0),
+                sap: detalles.indexOf(d) === 0 ? f.sap : 0,
+                diferencia: detalles.indexOf(d) === 0 ? f.diferencia : 0,
                 estado: f.estado,
                 motivo: motivoDiferenciaSolicitud(f, resultados)
               });
@@ -14965,7 +15002,7 @@
           head: [[
             "Solicitud",
             "Fecha",
-            "Horario",
+            "Horario solicitud",
             "Recargo BD.HE",
             "Recargo SAP",
             "Registradas",
