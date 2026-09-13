@@ -286,6 +286,9 @@
     .filtrosRango{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
 
     .filtroTablaResumen{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px;padding:0 4px}
+    .resumenAdminCabecera{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:0 0 12px}
+    .resumenAdminCabecera .filtroTablaResumen{margin:0}
+    .resumenAdminFiltros{margin-bottom:14px}
     .filtroTablaResumen span{font-weight:700;color:#55708d}
     .btnLimpiarFiltros{padding:8px 14px;font-size:.9rem}
     .tablaConFiltros th{vertical-align:top;white-space:nowrap}
@@ -1578,11 +1581,9 @@
         contexto: "Control de solicitudes, horas a pagar, SAP, permanencia y usuarios.",
         opciones: [
           { clave: "resumenAdmin", etiqueta: "Resumen", icono: "▦" },
-          { clave: "todasSolicitudes", etiqueta: "Solicitudes", icono: "≡" },
           { clave: "horasPagar", etiqueta: "Horas a pagar", icono: "$" },
           { clave: "permanencia", etiqueta: "Permanencia", icono: "P" },
           { clave: "conciliacion", etiqueta: "Conciliación SAP", icono: "⇄" },
-          { clave: "exportar", etiqueta: "Exportar", icono: "⇩" },
           { clave: "usuarios", etiqueta: "Usuarios", icono: "U" }
         ]
       });
@@ -4768,6 +4769,22 @@
 
 
     return p;
+  }
+
+
+  async function refrescarPerfilActual() {
+    if (!usuarioActual?.uid) return null;
+
+    try {
+      const perfil = await obtenerPerfil(usuarioActual);
+      perfilActual = perfil;
+      pintarPerfil(perfil, usuarioActual);
+      return perfil;
+    }
+    catch (err) {
+      console.warn("[HHEE] No se pudo refrescar el perfil actual:", err);
+      return perfilActual;
+    }
   }
 
 
@@ -8874,80 +8891,153 @@
 
   async function renderResumenAdmin() {
 
-    const arr =
-      await cargarTodasSolicitudes();
+    const arr = await cargarTodasSolicitudes();
 
+    const areas = [
+      ...new Set(
+        arr
+          .map(x => String(x.Area || "").trim())
+          .filter(Boolean)
+      )
+    ].sort((a, b) => a.localeCompare(b, "es"));
 
-    const pendientes =
-      arr.filter(
-        x =>
-          normEstado(x.estado) === "pendiente"
-      );
+    const meses = [
+      ...new Set(
+        arr
+          .map(x => String(x.fechaInicio || "").slice(0, 7))
+          .filter(x => /^\d{4}-\d{2}$/.test(x))
+      )
+    ].sort().reverse();
 
+    const etiquetaMes = mes => {
+      if (!/^\d{4}-\d{2}$/.test(mes)) return mes;
+      const [anio, mesNum] = mes.split("-");
+      return `${MESES[Number(mesNum)] || mesNum} ${anio}`;
+    };
 
-    const aprobadas =
-      arr.filter(
-        x =>
-          normEstado(x.estado) === "aprobada"
-      );
+    const filtros = {
+      area: "",
+      mes: "",
+      trabajador: "",
+      tipo: "",
+      estado: ""
+    };
 
+    const aplicar = () => {
+      const filtrada = arr.filter(s => {
+        const area = String(s.Area || "").trim();
+        const fecha = String(s.fechaInicio || "");
+        const trabajador = String(nombreCompleto(s) || "").trim();
+        const tipo = String(s.tipoFormulario || "").trim();
+        const estado = normEstado(s.estado);
 
-    const rechazadas =
-      arr.filter(
-        x =>
-          normEstado(x.estado) === "rechazada"
-      );
+        return (
+          (!filtros.area || area === filtros.area) &&
+          (!filtros.mes || fecha.startsWith(filtros.mes)) &&
+          (!filtros.trabajador || trabajador === filtros.trabajador) &&
+          (!filtros.tipo || tipo === filtros.tipo) &&
+          (!filtros.estado || estado === filtros.estado)
+        );
+      });
 
+      const pendientes = filtrada.filter(x => normEstado(x.estado) === "pendiente");
+      const aprobadas = filtrada.filter(x => normEstado(x.estado) === "aprobada");
+      const rechazadas = filtrada.filter(x => normEstado(x.estado) === "rechazada");
+      const horasAprobadas = aprobadas.reduce((suma, x) => suma + numero(x.horasTotales), 0);
 
-    const horasAprobadas =
-      aprobadas.reduce(
-        (suma, x) =>
-          suma + numero(x.horasTotales),
-        0
-      );
+      $("admTabla").innerHTML = tablaSolicitudes(filtrada, "admin", filtros);
 
+      const conectar = (id, clave) => {
+        $(id)?.addEventListener("change", e => {
+          filtros[clave] = e.target.value;
+          aplicar();
+        });
+      };
 
-    const ultimas =
-      arr
-        .slice(0, 10);
+      conectar("filtroTablaTrabajador", "trabajador");
+      conectar("filtroTablaMes", "mes");
+      conectar("filtroTablaTipo", "tipo");
+      conectar("filtroTablaEstado", "estado");
 
+      $("admContador").textContent =
+        `${filtrada.length} solicitud${filtrada.length === 1 ? "" : "es"}`;
+      $("admPendientes").textContent = pendientes.length;
+      $("admAprobadas").textContent = aprobadas.length;
+      $("admRechazadas").textContent = rechazadas.length;
+      $("admHorasAprobadas").textContent = `${vistaHoras(horasAprobadas)} h`;
+    };
 
-    $("contenidoModulo")
-      .innerHTML =
-        `
-          <div class="resumenKpi">
+    $("contenidoModulo").innerHTML = `
+      <div class="resumenAdminCabecera">
+        <div class="filtroTablaResumen">
+          <span id="admContador">${arr.length} solicitudes</span>
+          <button type="button" class="btn btnSecundario btnLimpiarFiltros" id="admLimpiarFiltros">
+            Limpiar filtros
+          </button>
+        </div>
+        <button type="button" class="btn btnPrimario" id="btnResumenExportar">
+          ⇩ Exportar Excel
+        </button>
+      </div>
 
-            <div class="kpi">
-              <span>Pendientes</span>
-              <strong>${pendientes.length}</strong>
-            </div>
-
-            <div class="kpi">
-              <span>Aprobadas</span>
-              <strong>${aprobadas.length}</strong>
-            </div>
-
-            <div class="kpi">
-              <span>Rechazadas</span>
-              <strong>${rechazadas.length}</strong>
-            </div>
-
-            <div class="kpi">
-              <span>Horas aprobadas</span>
-              <strong>${vistaHoras(horasAprobadas)} h</strong>
-            </div>
-
+      <div class="bloque resumenAdminFiltros">
+        <div class="grid2">
+          <div>
+            <label>Área</label>
+            <select id="admArea">
+              <option value="">Todas</option>
+              ${areas.map(a => `<option value="${esc(a)}">${esc(a)}</option>`).join("")}
+            </select>
           </div>
-
-
-          <div class="bloque">
-
-            <h3>Últimas solicitudes</h3>
-
-            ${tablaSolicitudes(ultimas, "admin")}
-
+          <div>
+            <label>Mes</label>
+            <select id="admMes">
+              <option value="">Todos los meses</option>
+              ${meses.map(m => `<option value="${esc(m)}">${esc(etiquetaMes(m))}</option>`).join("")}
+            </select>
           </div>
-        `;
+        </div>
+      </div>
+
+      <div class="resumenKpi">
+        <div class="kpi"><span>Pendientes</span><strong id="admPendientes">0</strong></div>
+        <div class="kpi"><span>Aprobadas</span><strong id="admAprobadas">0</strong></div>
+        <div class="kpi"><span>Rechazadas</span><strong id="admRechazadas">0</strong></div>
+        <div class="kpi"><span>Horas aprobadas</span><strong id="admHorasAprobadas">0,00 h</strong></div>
+      </div>
+
+      <div class="bloque">
+        <h3>Solicitudes</h3>
+        <div id="admTabla"></div>
+      </div>
+    `;
+
+    $("admArea").addEventListener("change", e => {
+      filtros.area = e.target.value;
+      aplicar();
+    });
+
+    $("admMes").addEventListener("change", e => {
+      filtros.mes = e.target.value;
+      aplicar();
+    });
+
+    $("admLimpiarFiltros").addEventListener("click", () => {
+      filtros.area = "";
+      filtros.mes = "";
+      filtros.trabajador = "";
+      filtros.tipo = "";
+      filtros.estado = "";
+      $("admArea").value = "";
+      $("admMes").value = "";
+      aplicar();
+    });
+
+    $("btnResumenExportar").addEventListener("click", () => {
+      abrirModulo("exportar");
+    });
+
+    aplicar();
   }
 
 
@@ -11944,6 +12034,7 @@
     };
 
 
+
   function formPerfilActivo(u) {
 
     modal(
@@ -12181,6 +12272,22 @@
                   true
               }
             );
+
+
+            cacheUsuarios.set(
+              u.id,
+              {
+                ...u,
+                ...datos
+              }
+            );
+
+            if (u.id === usuarioActual?.uid) {
+              perfilActual = {
+                ...perfilActual,
+                ...datos
+              };
+            }
 
 
             const preId =
@@ -14606,7 +14713,6 @@
     const modulosAdmin =
       new Set([
         "resumenAdmin",
-        "todasSolicitudes",
         "horasPagar",
         "conciliacion",
         "exportar",
@@ -14730,10 +14836,6 @@
         "Indicadores generales de solicitudes y horas aprobadas."
       ],
 
-      todasSolicitudes: [
-        "Solicitudes",
-        "Vista administrativa general de todas las áreas y estados."
-      ],
 
       horasPagar: [
         "Horas a pagar",
@@ -14788,6 +14890,7 @@
         "ingresarHhee"
       ) {
 
+        await refrescarPerfilActual();
         renderIngresarHhee();
 
       }
@@ -14833,14 +14936,6 @@
       ) {
 
         await renderResumenAdmin();
-
-      }
-      else if (
-        clave ===
-        "todasSolicitudes"
-      ) {
-
-        await renderTodasSolicitudes();
 
       }
       else if (
@@ -15000,6 +15095,20 @@
       "click",
       cerrarPanel
     );
+
+
+  document.addEventListener("visibilitychange", async () => {
+    if (document.visibilityState === "visible" && usuarioActual) {
+      await refrescarPerfilActual();
+    }
+  });
+
+
+  window.addEventListener("focus", async () => {
+    if (usuarioActual) {
+      await refrescarPerfilActual();
+    }
+  });
 
 
   /* =========================================================
