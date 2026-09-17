@@ -2127,6 +2127,24 @@
   }
 
 
+  /*
+    Conversión de horas para la conciliación con SAP.
+    Se lleva hacia arriba al siguiente múltiplo de 0,50 h:
+    1,30 h -> 1,50 h; 1,52 h -> 2,00 h.
+    El dato original de BD.HE permanece en "Horas registradas".
+  */
+  function redondearHorasParaSAP(horas) {
+
+    const h = Math.max(0, numero(horas));
+
+    if (h <= 0) return 0;
+
+    return red2(
+      Math.ceil((h * 2) - 1e-9) / 2
+    );
+  }
+
+
   function minutosHoras(m) {
 
     return red2(
@@ -2161,9 +2179,25 @@
 
   const REGLA_PAGO_CONFIGURADA = true;
   const HORAS_MINIMAS_PAGO = 3;
+  const HORAS_MINIMAS_PAGO_DOMINGO = 6;
 
 
-  function detallePagoDesdeHoras(horasAprobadas) {
+  function horasMinimasPagoPorFecha(fecha) {
+
+    if (!fecha) return HORAS_MINIMAS_PAGO;
+
+    const dow = new Date(inicioDia(fecha)).getUTCDay();
+
+    return dow === 0
+      ? HORAS_MINIMAS_PAGO_DOMINGO
+      : HORAS_MINIMAS_PAGO;
+  }
+
+
+  function detallePagoDesdeHoras(
+    horasAprobadas,
+    minimo = HORAS_MINIMAS_PAGO
+  ) {
 
     const registradas =
       red2(
@@ -2177,8 +2211,8 @@
     const pagar =
       registradas > 0
       &&
-      registradas < HORAS_MINIMAS_PAGO
-        ? HORAS_MINIMAS_PAGO
+      registradas < minimo
+        ? minimo
         : registradas;
 
 
@@ -2199,25 +2233,27 @@
   }
 
 
-  function horasPagablesDesdeHoras(horasAprobadas) {
+  function horasPagablesDesdeHoras(horasAprobadas, minimo = HORAS_MINIMAS_PAGO) {
 
     return detallePagoDesdeHoras(
-      horasAprobadas
+      horasAprobadas,
+      minimo
     ).pagar;
   }
 
 
-  function bonificacionDesdeHoras(horasAprobadas) {
+  function bonificacionDesdeHoras(horasAprobadas, minimo = HORAS_MINIMAS_PAGO) {
 
     return detallePagoDesdeHoras(
-      horasAprobadas
+      horasAprobadas,
+      minimo
     ).bonificacion;
   }
 
 
   function textoEstadoReglaPago() {
 
-    return `Mínimo ${vistaHoras(HORAS_MINIMAS_PAGO)} h por trabajador, fecha y recargo. Si las horas aprobadas son menores, la diferencia se agrega como bonificación al mismo recargo.`;
+    return `Mínimo ${vistaHoras(HORAS_MINIMAS_PAGO)} h por trabajador, fecha y recargo; en domingos el mínimo es de ${vistaHoras(HORAS_MINIMAS_PAGO_DOMINGO)} h. Si las horas aprobadas son menores, la diferencia se agrega como bonificación al mismo recargo.`;
   }
 
 
@@ -7690,6 +7726,21 @@
   }
 
 
+  function diaTrabajoSolicitud(s) {
+
+    const guardado = String(s?.diaTrabajo || "").trim();
+    if (guardado) return guardado;
+
+    const fecha = String(s?.fechaInicio || "");
+    if (fecha && new Date(inicioDia(fecha)).getUTCDay() === 0) {
+      return "Domingo";
+    }
+
+    // Compatibilidad con solicitudes antiguas sin diaTrabajo.
+    return String(s?.tipoFormulario || "").trim();
+  }
+
+
   function tablaSolicitudes(
     lista,
     modo,
@@ -7715,7 +7766,7 @@
     const tipos = [
       ...new Set(
         lista
-          .map(s => String(s.tipoFormulario || "").trim())
+          .map(s => diaTrabajoSolicitud(s))
           .filter(Boolean)
       )
     ].sort((a, b) => a.localeCompare(b, "es"));
@@ -7840,7 +7891,7 @@
                   ${esc(s.horaInicio || "")} - ${esc(s.horaTermino || "")}
                 </td>
 
-                <td>${esc(s.tipoFormulario || "")}</td>
+                <td>${esc(diaTrabajoSolicitud(s))}</td>
 
                 <td>${vistaHoras(s.horas50 || 0)}</td>
                 <td>${vistaHoras(s.horas75 || 0)}</td>
@@ -8025,6 +8076,12 @@
               ${esc(s.horaInicio || "")}
               -
               ${esc(s.horaTermino || "")}
+            </div>
+
+            <div>
+              <b>Día de trabajo</b>
+              <br>
+              ${esc(diaTrabajoSolicitud(s) || "-")}
             </div>
 
             <div>
@@ -8560,7 +8617,7 @@
     const aplicar = () => {
       const filtrada = arr.filter(s =>
         (!filtros.mes || String(s.fechaInicio || "").startsWith(filtros.mes)) &&
-        (!filtros.tipo || String(s.tipoFormulario || "").trim() === filtros.tipo) &&
+        (!filtros.tipo || diaTrabajoSolicitud(s) === filtros.tipo) &&
         (!filtros.estado || normEstado(s.estado) === filtros.estado)
       );
 
@@ -8704,7 +8761,7 @@
       const filtrada = lista.filter(s => {
         const trabajador = String(nombreCompleto(s) || "").trim();
         const fecha = String(s.fechaInicio || "");
-        const tipo = String(s.tipoFormulario || "").trim();
+        const tipo = diaTrabajoSolicitud(s);
         const estado = normEstado(s.estado);
 
         return (
@@ -8985,7 +9042,7 @@
         const area = String(s.Area || "").trim();
         const fecha = String(s.fechaInicio || "");
         const trabajador = String(nombreCompleto(s) || "").trim();
-        const tipo = String(s.tipoFormulario || "").trim();
+        const tipo = diaTrabajoSolicitud(s);
         const estado = normEstado(s.estado);
 
         return (
@@ -9403,11 +9460,16 @@
     return [...mapa.values()]
       .map(
         fila => {
-          const detallePago =
-            detallePagoDesdeHoras(fila.horasRegistradas);
+          const minimoPago = horasMinimasPagoPorFecha(fila.fecha);
+          const detallePago = detallePagoDesdeHoras(
+            fila.horasRegistradas,
+            minimoPago
+          );
 
           return {
             ...fila,
+            minimoPago,
+            horasMinimasPago: minimoPago,
             horasRegistradas: detallePago.registradas,
             bonificacion: detallePago.bonificacion,
             horasPagar: detallePago.pagar,
@@ -9517,7 +9579,9 @@
           <div class="notaReglaPago">
             <b>Regla de horas mínimas a pagar:</b> ${esc(textoEstadoReglaPago())}
             <br>
-            <b>Ejemplo:</b> 1,00 h real al 50% + 2,00 h de bonificación al 50% = 3,00 h a pagar al 50%.
+            <b>Mínimos según convenio:</b> sábado = 3,00 h; domingo = 6,00 h.
+            <br>
+            <b>Ejemplo:</b> 1,00 h real al 50% + 2,00 h de bonificación al 50% = 3,00 h a pagar al 50%. En domingo, 2,00 h reales + 4,00 h de bonificación = 6,00 h a pagar.
           </div>
 
           <div class="filtrosRango">
@@ -13315,7 +13379,7 @@
           "Correo trabajador": s.correoTrabajador || "",
           "Supervisor": s.supervisorCorreo || "",
           "Tipo formulario": s.tipoFormulario || "",
-          "Día trabajo": s.diaTrabajo || "",
+          "Día trabajo": diaTrabajoSolicitud(s) || "",
           "Fecha inicio": fechaCL(s.fechaInicio),
           "Fecha término": fechaCL(s.fechaTermino),
           "Hora inicio": s.horaInicio || "",
@@ -13883,6 +13947,7 @@
 
       const bd = new Map();
       const sap = new Map();
+      const sapRedondeado = new Map();
       const meta = new Map();
 
 
@@ -13913,6 +13978,7 @@
             k,
             {
               registradas: fila.horasRegistradas,
+              horasRedondeadas: redondearHorasParaSAP(fila.horasRegistradas),
               bonificacion: fila.bonificacion,
               pagar: fila.horasPagar,
               solicitudes: fila.solicitudes || [],
@@ -14008,6 +14074,16 @@
             )
           );
 
+          // Conversión usada exclusivamente para el cruce con BD.HE.
+          sapRedondeado.set(
+            k,
+            red2(
+              (sapRedondeado.get(k) || 0)
+              +
+              redondearHorasParaSAP(horas)
+            )
+          );
+
 
           if (!meta.has(numeroPersonal)) {
 
@@ -14082,30 +14158,37 @@
           solicitudesDetalle: []
         };
 
-        const hsExactas = red2(sap.get(k) || 0);
+        const hsSAPRawExactas = red2(sap.get(k) || 0);
+        const hsExactas = red2(sapRedondeado.get(k) || 0);
         let hsComparacion = hsExactas;
+        let hsSAPRawComparacion = hsSAPRawExactas;
         let recargoSAPReal = hsExactas > 0 ? recargoBD : null;
         let horasSAPAlternativas = 0;
+        let horasSAPAlternativasRaw = 0;
         let recargoSAPAlternativo = null;
 
         // Si no hay SAP con el mismo recargo, buscar SAP de la misma persona
         // y fecha con otro recargo. Esto permite detectar 50% vs 75%, etc.
         if (hsExactas === 0) {
-          sap.forEach((valorSap, claveSap) => {
+          sapRedondeado.forEach((valorSapRedondeado, claveSap) => {
             const ps = claveSap.split("|");
             if (
               ps[0] === idCruce &&
               ps[1] === fecha &&
               Number(ps[2]) !== recargoBD &&
-              numero(valorSap) > 0
+              numero(valorSapRedondeado) > 0
             ) {
-              horasSAPAlternativas = red2(horasSAPAlternativas + numero(valorSap));
+              horasSAPAlternativas = red2(horasSAPAlternativas + numero(valorSapRedondeado));
+              horasSAPAlternativasRaw = red2(
+                horasSAPAlternativasRaw + numero(sap.get(claveSap) || 0)
+              );
               recargoSAPAlternativo = Number(ps[2]);
               clavesSAPAsociadas.add(claveSap);
             }
           });
           if (horasSAPAlternativas > 0) {
             hsComparacion = horasSAPAlternativas;
+            hsSAPRawComparacion = horasSAPAlternativasRaw;
             recargoSAPReal = recargoSAPAlternativo;
           }
         }
@@ -14121,7 +14204,10 @@
           };
 
         const registradas = red2(b.registradas || 0);
-        const diferencia = red2(hsComparacion - registradas);
+        const horasRedondeadas = red2(
+          b.horasRedondeadas ?? redondearHorasParaSAP(registradas)
+        );
+        const diferencia = red2(hsComparacion - horasRedondeadas);
 
         let estado = "Conforme";
         if (idCruce.startsWith("__SINNUM__")) {
@@ -14145,10 +14231,14 @@
           recargoBD,
           recargoSAP: recargoSAPReal,
           horasSAPAlternativas,
+          horasSAPAlternativasRaw,
+          horasSAPRaw: hsSAPRawComparacion,
+          horasSAPRedondeadas: hsComparacion,
           registradas,
+          horasRedondeadas,
           bonificacion: red2(b.bonificacion || 0),
           pagar: red2(b.pagar || registradas),
-          sap: hsComparacion,
+          sap: hsSAPRawComparacion,
           diferencia,
           estado,
           solicitudes: b.solicitudes || [],
@@ -14205,11 +14295,15 @@
           recargoBD: recargoBDAlternativo,
           recargoSAP,
           horasSAPAlternativas: 0,
+          horasSAPAlternativasRaw: 0,
+          horasSAPRaw: hs,
+          horasSAPRedondeadas: red2(sapRedondeado.get(k) || 0),
           registradas: 0,
+          horasRedondeadas: 0,
           bonificacion: 0,
           pagar: 0,
           sap: hs,
-          diferencia: hs,
+          diferencia: red2(sapRedondeado.get(k) || 0),
           estado: recargoBDAlternativo ? "Revisar recargo" : "Solo SAP",
           solicitudes: bdAlternativo?.solicitudes || [],
           solicitudesDetalle: bdAlternativo?.solicitudesDetalle || []
@@ -14237,7 +14331,8 @@
         generado: new Date().toISOString(),
         generadoPor: nombreCompleto(perfilActual),
         reglaPagoConfigurada: REGLA_PAGO_CONFIGURADA,
-        horasMinimasPago: HORAS_MINIMAS_PAGO
+        horasMinimasPago: HORAS_MINIMAS_PAGO,
+        horasMinimasPagoDomingo: HORAS_MINIMAS_PAGO_DOMINGO
       };
 
 
@@ -14274,7 +14369,13 @@
     const recargoBD = Number(fila.recargoBD || fila.recargo || 0);
     const recargoSAP = Number(fila.recargoSAP || 0);
     const registradas = Number(fila.registradas || 0);
+    const horasRedondeadas = Number(
+      fila.horasRedondeadas ?? redondearHorasParaSAP(registradas)
+    );
     const sap = Number(fila.sap || 0);
+    const sapRedondeadas = Number(
+      fila.horasSAPRedondeadas ?? redondearHorasParaSAP(sap)
+    );
 
     if (fila.estado === "Conforme" &&
         (!recargoBD || !recargoSAP || recargoBD === recargoSAP)) {
@@ -14285,7 +14386,7 @@
       return `DIFERENCIA DE RECARGO (BD.HE ${recargoBD}% / SAP ${recargoSAP}%)`;
     }
 
-    if (registradas > 0 && sap > 0 && Math.abs(registradas - sap) >= 0.01) {
+    if (horasRedondeadas > 0 && sapRedondeadas > 0 && Math.abs(horasRedondeadas - sapRedondeadas) >= 0.01) {
       return "DIFERENCIA DE HORAS";
     }
 
@@ -14348,8 +14449,10 @@
             horario: "—",
             recargoBD: f.recargoBD || f.recargo || null,
             registradas: f.registradas,
+            horasRedondeadas: f.horasRedondeadas ?? redondearHorasParaSAP(f.registradas),
             recargoSAP: f.recargoSAP || null,
             sap: f.sap,
+            sapRedondeadas: f.horasSAPRedondeadas ?? redondearHorasParaSAP(f.sap),
             diferencia: f.diferencia,
             estado: f.estado,
             motivo: motivoDiferenciaSolicitudDetalle(f)
@@ -14362,7 +14465,10 @@
           const esPrimera = indice === 0;
           const recargoSAP = f.recargoSAP || null;
           const sapMostrar = esPrimera
-            ? red2(f.sap || f.horasSAPAlternativas || 0)
+            ? red2(f.sap || f.horasSAPAlternativasRaw || 0)
+            : 0;
+          const sapRedondeadasMostrar = esPrimera
+            ? red2(f.horasSAPRedondeadas ?? f.horasSAPAlternativas ?? redondearHorasParaSAP(sapMostrar))
             : 0;
 
           let estado = f.estado;
@@ -14385,10 +14491,12 @@
                 : "—",
             recargoBD: f.recargoBD || f.recargo || null,
             registradas: horasSolicitud,
+            horasRedondeadas: redondearHorasParaSAP(horasSolicitud),
             recargoSAP,
             sap: sapMostrar,
+            sapRedondeadas: sapRedondeadasMostrar,
             diferencia: esPrimera
-              ? red2((f.sap || f.horasSAPAlternativas || 0) - f.registradas)
+              ? red2(sapRedondeadasMostrar - (f.horasRedondeadas ?? redondearHorasParaSAP(f.registradas)))
               : 0,
             estado,
             motivo
@@ -14406,8 +14514,10 @@
             horario: "—",
             recargoBD: f.recargoBD || null,
             registradas: 0,
+            horasRedondeadas: 0,
             recargoSAP: f.recargoSAP || f.recargo || null,
             sap: f.sap,
+            sapRedondeadas: f.horasSAPRedondeadas ?? redondearHorasParaSAP(f.sap),
             diferencia: f.diferencia,
             estado: f.estado,
             motivo: motivoDiferenciaSolicitudDetalle(f)
@@ -14426,10 +14536,12 @@
 
           <div class="mensaje mensajeInfo" style="margin-top:10px">
             La revisión compara <b>cada solicitud aprobada</b> con SAP por
-            <b>N° de personal + fecha + recargo</b>. El <b>horario se conserva desde la solicitud</b>
-            porque SAP no informa el horario; sirve como antecedente para revisar si el recargo aplicado
-            corresponde. Si las horas coinciden pero el recargo no coincide, se informa como
-            <b>diferencia de recargo</b>. La bonificación no interviene en esta conciliación.
+            <b>N° de personal + fecha + recargo</b>. <b>Horas registradas</b> conserva el dato duro de BD.HE;
+            <b>Horas redondeadas</b> se lleva hacia arriba al siguiente 0,50 h y es el valor utilizado para el cruce.
+            En SAP se aplica la misma conversión solo para comparar. El <b>horario se conserva desde la solicitud</b>
+            porque SAP no informa el horario; sirve como antecedente para revisar si el recargo aplicado corresponde.
+            Si las horas redondeadas coinciden pero el recargo no coincide, se informa como <b>diferencia de recargo</b>.
+            La bonificación no interviene en esta conciliación.
           </div>
 
           <div class="resumenKpi">
@@ -14446,6 +14558,7 @@
                   <th>Horario solicitud</th>
                   <th>Recargo BD.HE</th>
                   <th>Horas registradas</th>
+                  <th>Horas redondeadas</th>
                   <th>Recargo SAP</th>
                   <th>Horas SAP</th>
                   <th>Diferencia</th>
@@ -14462,6 +14575,7 @@
                           <td>${esc(d.horario)}</td>
                           <td>${d.recargoBD ? `${d.recargoBD}%` : "—"}</td>
                           <td>${vistaHoras(d.registradas)} h</td>
+                          <td><b>${vistaHoras(d.horasRedondeadas ?? redondearHorasParaSAP(d.registradas))} h</b></td>
                           <td>${d.recargoSAP ? `${d.recargoSAP}%` : "—"}</td>
                           <td><b>${vistaHoras(d.sap)} h</b></td>
                           <td>${vistaHoras(d.diferencia)} h</td>
@@ -14579,9 +14693,9 @@
     $("conResultado").innerHTML =
       `
         <div class="notaReglaPago">
-          La conciliación considera únicamente las <b>horas registradas y aprobadas por el supervisor</b> y las compara con SAP por <b>N° de personal + fecha + recargo</b>. También verifica que el <b>recargo</b> sea el mismo; un 50% en BD.HE y 75% en SAP es una diferencia aunque las horas coincidan.
+          La conciliación considera únicamente las <b>horas registradas y aprobadas por el supervisor</b> y las compara con SAP por <b>N° de personal + fecha + recargo</b>. <b>Horas registradas</b> conserva el dato duro de BD.HE y <b>Horas redondeadas</b> se utiliza para el cruce. La conversión se realiza hacia arriba al siguiente 0,50 h tanto para BD.HE como para SAP, sin modificar el dato original. También verifica que el <b>recargo</b> sea el mismo; un 50% en BD.HE y 75% en SAP es una diferencia aunque las horas redondeadas coincidan.
           <br>
-          La bonificación y la regla de mínimo de pago se mantienen para el proceso de pago, pero <b>no intervienen en la revisión de diferencias SAP</b>. La conciliación compara únicamente las horas reales registradas y aprobadas contra SAP.
+          La bonificación y la regla de mínimo de pago se mantienen para el proceso de pago, pero <b>no intervienen en la revisión de diferencias SAP</b>.
         </div>
 
         <div class="resumenKpi">
@@ -14629,8 +14743,8 @@
               <h3>Conciliación BD.HE vs SAP</h3>
               <p>
                 Se consideran únicamente solicitudes <b>aprobadas por el supervisor</b>.
-                El cruce se realiza por <b>N° de personal + fecha + recargo</b> y compara las <b>horas registradas</b> contra las horas informadas por SAP. Si el recargo no coincide, se identifica como diferencia de recargo.
-                La bonificación se conserva para el proceso de pago, pero no se considera para determinar diferencias. El cruce compara únicamente las horas registradas y aprobadas contra SAP.
+                El cruce se realiza por <b>N° de personal + fecha + recargo</b>. <b>Horas registradas</b> conserva el dato duro de BD.HE y <b>Horas redondeadas</b> aplica una conversión hacia arriba al siguiente 0,50 h para realizar el cruce con SAP. En SAP se aplica la misma conversión únicamente para comparar. Si el recargo no coincide, se identifica como diferencia de recargo.
+                La bonificación se conserva para el proceso de pago, pero no se considera para determinar diferencias.
               </p>
             </div>
           </div>
@@ -14884,7 +14998,17 @@
         return `DIFERENCIA DE RECARGO (BD.HE ${fila.recargoBD}% / SAP ${fila.recargoSAP}%)`;
       }
 
-      if (fila.registradas > 0 && fila.sap > 0) {
+      const bdRedondeadas = Number(
+        fila.horasRedondeadas ??
+        redondearHorasParaSAP(fila.registradas || 0)
+      );
+      const sapRedondeadas = Number(
+        fila.sapRedondeadas ??
+        fila.horasSAPRedondeadas ??
+        redondearHorasParaSAP(fila.sap || 0)
+      );
+
+      if (bdRedondeadas > 0 && sapRedondeadas > 0 && Math.abs(bdRedondeadas - sapRedondeadas) >= 0.01) {
         return "DIFERENCIA DE HORAS";
       }
 
@@ -14920,7 +15044,9 @@
               recargoBD: f.recargoBD || f.recargo || null,
               recargoSAP: f.recargoSAP || (f.sap > 0 ? f.recargo : null),
               registradas: f.registradas,
+              horasRedondeadas: f.horasRedondeadas ?? redondearHorasParaSAP(f.registradas),
               sap: f.sap,
+              sapRedondeadas: f.horasSAPRedondeadas ?? redondearHorasParaSAP(f.sap),
               diferencia: f.diferencia,
               estado: f.estado,
               motivo: motivoDiferenciaSolicitud(f, resultados)
@@ -14939,7 +15065,9 @@
                 recargoBD: f.recargoBD || f.recargo || null,
                 recargoSAP: f.recargoSAP || (f.sap > 0 ? f.recargo : null),
                 registradas: red2(d.horas || 0),
+                horasRedondeadas: redondearHorasParaSAP(d.horas || 0),
                 sap: detalles.indexOf(d) === 0 ? f.sap : 0,
+                sapRedondeadas: detalles.indexOf(d) === 0 ? (f.horasSAPRedondeadas ?? redondearHorasParaSAP(f.sap)) : 0,
                 diferencia: detalles.indexOf(d) === 0 ? f.diferencia : 0,
                 estado: f.estado,
                 motivo: motivoDiferenciaSolicitud(f, resultados)
@@ -14971,7 +15099,9 @@
                 recargoBD: f.recargoBD || f.recargo || null,
                 recargoSAP: f.recargoSAP || f.recargo || null,
                 registradas: 0,
+                horasRedondeadas: 0,
                 sap: f.sap,
+                sapRedondeadas: f.horasSAPRedondeadas ?? redondearHorasParaSAP(f.sap),
                 diferencia: f.diferencia,
                 estado: f.estado,
                 motivo: "SOLO FIGURA EN SAP"
@@ -15031,13 +15161,14 @@
               fechaCL(d.fecha),
               d.horario,
               d.recargoBD ? `${d.recargoBD}%` : "—",
-              d.recargoSAP ? `${d.recargoSAP}%` : "—",
               `${vistaHoras(d.registradas)} h`,
+              `${vistaHoras(d.horasRedondeadas ?? redondearHorasParaSAP(d.registradas))} h`,
+              d.recargoSAP ? `${d.recargoSAP}%` : "—",
               `${vistaHoras(d.sap)} h`,
               `${vistaHoras(d.diferencia)} h`,
               d.motivo
             ])
-          : [["—", "—", "—", "—", "0,00 h", "0,00 h", "0,00 h", "SIN DATOS"]];
+          : [["—", "—", "—", "0,00 h", "0,00 h", "—", "0,00 h", "0,00 h", "SIN DATOS"]];
 
       if (typeof pdf.autoTable === "function") {
         pdf.autoTable({
@@ -15047,8 +15178,9 @@
             "Fecha",
             "Horario solicitud",
             "Recargo BD.HE",
-            "Recargo SAP",
             "Registradas",
+            "Horas redondeadas",
+            "Recargo SAP",
             "SAP",
             "Diferencia",
             "Resultado"
@@ -15068,17 +15200,18 @@
             fontStyle: "bold"
           },
           columnStyles: {
-            0: { cellWidth: 24 },
-            1: { cellWidth: 28 },
-            2: { cellWidth: 22, halign: "center" },
-            3: { cellWidth: 22, halign: "center" },
-            4: { cellWidth: 23, halign: "right" },
-            5: { cellWidth: 23, halign: "right" },
-            6: { cellWidth: 23, halign: "right" },
-            7: { cellWidth: 48 }
+            0: { cellWidth: 23 },
+            1: { cellWidth: 27 },
+            2: { cellWidth: 20, halign: "center" },
+            3: { cellWidth: 22, halign: "right" },
+            4: { cellWidth: 20, halign: "center" },
+            5: { cellWidth: 22, halign: "right" },
+            6: { cellWidth: 22, halign: "right" },
+            7: { cellWidth: 22, halign: "right" },
+            8: { cellWidth: 41 }
           },
           didParseCell(data) {
-            if (data.section === "body" && data.column.index === 7) {
+            if (data.section === "body" && data.column.index === 8) {
               const texto = String(data.cell.raw || "");
               if (texto === "CONFORME") {
                 data.cell.styles.textColor = [24, 134, 91];
