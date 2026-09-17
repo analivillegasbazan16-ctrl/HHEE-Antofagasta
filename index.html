@@ -9471,6 +9471,7 @@
             minimoPago,
             horasMinimasPago: minimoPago,
             horasRegistradas: detallePago.registradas,
+            horasRedondeadas: redondearHorasParaSAP(detallePago.registradas),
             bonificacion: detallePago.bonificacion,
             horasPagar: detallePago.pagar,
             solicitudes: [...fila.solicitudes],
@@ -9762,6 +9763,7 @@
                             <th>Fecha</th>
                             <th>Recargo</th>
                             <th>Horas registradas</th>
+                            <th>Horas redondeadas</th>
                             <th>Bonificación por mínimo</th>
                             <th>Horas a pagar</th>
                           </tr>
@@ -9777,6 +9779,7 @@
                                     <td>${fechaCL(f.fecha)}</td>
                                     <td>${f.recargo}%</td>
                                     <td>${vistaHoras(f.horasRegistradas)} h</td>
+                                    <td><b>${vistaHoras(f.horasRedondeadas ?? redondearHorasParaSAP(f.horasRegistradas))} h</b></td>
                                     <td>
                                       ${vistaHoras(f.bonificacion)} h
                                       ${
@@ -9907,6 +9910,7 @@
                 "Fecha": fechaCL(f.fecha),
                 "Recargo": `${f.recargo}%`,
                 "Horas registradas": f.horasRegistradas,
+                "Horas redondeadas": f.horasRedondeadas ?? redondearHorasParaSAP(f.horasRegistradas),
                 "Bonificación por mínimo": f.bonificacion,
                 "Horas a pagar": f.horasPagar,
                 "Explicación pago": f.bonificacion > 0
