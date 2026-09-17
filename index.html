@@ -2208,19 +2208,24 @@
       );
 
 
+    // La regla de mínimo se aplica sobre las horas redondeadas.
+    // Las horas registradas se conservan intactas como dato duro.
+    const redondeadas =
+      redondearHorasParaSAP(registradas);
+
     const pagar =
-      registradas > 0
+      redondeadas > 0
       &&
-      registradas < minimo
+      redondeadas < minimo
         ? minimo
-        : registradas;
+        : redondeadas;
 
 
     const bonificacion =
       red2(
         Math.max(
           0,
-          pagar - registradas
+          pagar - redondeadas
         )
       );
 
